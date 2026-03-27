@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Sans, Playfair_Display, Roboto_Mono } from "next/font/google";
+import { CinematicLoader } from "@/components/CinematicLoader";
 import { Providers } from "@/components/Providers";
 import { FluidProvider } from "@/components/fluid/FluidProvider";
 import { DocumentLang } from "@/components/DocumentLang";
@@ -44,6 +45,7 @@ export default function RootLayout({
       className={`${sans.variable} ${playfair.variable} ${robotoMono.variable}`}
     >
       <body className="m-0 min-h-[100dvh] bg-film-studio bg-fixed font-sans text-mist antialiased">
+        <CinematicLoader />
         <Providers>
           <FluidProvider>
             <Atmosphere>
