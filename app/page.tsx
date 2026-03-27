@@ -24,7 +24,7 @@ const OscilloscopeText = dynamic(
 );
 
 export default function Home() {
-  const [siteVisible, setSiteVisible] = useState(false);
+  const [phraseComplete, setPhraseComplete] = useState(false);
   const reduce = useReducedMotion();
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -72,16 +72,16 @@ export default function Home() {
       }}
     >
       <OscilloscopeText
-        siteVisible={siteVisible}
-        onComplete={() => setSiteVisible(true)}
+        siteVisible={phraseComplete}
+        onComplete={() => setPhraseComplete(true)}
         overlayZIndex={20}
       />
       <motion.div
         initial={false}
-        animate={{ opacity: siteVisible ? 1 : 0 }}
+        animate={{ opacity: phraseComplete ? 1 : 0 }}
         transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
         style={{
-          pointerEvents: siteVisible ? "auto" : "none",
+          pointerEvents: phraseComplete ? "auto" : "none",
         }}
         className="w-full"
       >
