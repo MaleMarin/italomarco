@@ -62,6 +62,14 @@ export function CinematicLoader() {
           }}
           exit={{ opacity: 0, transition: { duration: 0 } }}
         >
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              transform: "translateY(-7vh)",
+            }}
+          >
           <svg
             viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
             preserveAspectRatio="xMidYMid meet"
@@ -94,7 +102,7 @@ export function CinematicLoader() {
             animate={{ opacity: 1 }}
             transition={{ delay: 1.2, duration: 0.35, ease: "easeOut" }}
             style={{
-              marginTop: 24,
+              marginTop: 16,
               marginBottom: 0,
               fontSize: 14,
               fontWeight: 300,
@@ -105,6 +113,7 @@ export function CinematicLoader() {
           >
             ITALO MARCO
           </motion.p>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
