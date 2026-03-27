@@ -164,7 +164,7 @@ export function CinematicLoader() {
             style={{
               marginTop: 32,
               marginBottom: 0,
-              fontSize: 12,
+              fontSize: 15,
               fontWeight: 200,
               letterSpacing: "0.35em",
               color: "rgba(255,255,255,0.75)",
