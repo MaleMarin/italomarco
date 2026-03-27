@@ -2,13 +2,22 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const REVEAL_MS = 3000;
+const CHARS =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+const LINE1 = "No capturo sonido.";
+const LINE2 = "Traduzco intenciones.";
+const FULL = `${LINE1} ${LINE2}`;
+
 const HOLD_MS = 3000;
 const FADE_MS = 1000;
-const TOTAL_MS = REVEAL_MS + HOLD_MS + FADE_MS;
 
-function easeInOutCubic(t: number): number {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+function randomChar(): string {
+  return CHARS[Math.floor(Math.random() * CHARS.length)]!;
+}
+
+function isScrambleChar(c: string): boolean {
+  return /[a-zA-Z]/.test(c);
 }
 
 export type OscilloscopeTextProps = {
@@ -22,49 +31,101 @@ export default function OscilloscopeText({
   siteVisible = false,
   overlayZIndex = 20,
 }: OscilloscopeTextProps) {
-  const [progress, setProgress] = useState(0);
+  const [letters, setLetters] = useState(() =>
+    FULL.split("").map((c) => (isScrambleChar(c) ? randomChar() : c)),
+  );
   const [fading, setFading] = useState(false);
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
   const completeFiredRef = useRef(false);
-  const fadeStartedRef = useRef(false);
 
   useEffect(() => {
     completeFiredRef.current = false;
-    fadeStartedRef.current = false;
-    setProgress(0);
     setFading(false);
+    setLetters(
+      FULL.split("").map((c) => (isScrambleChar(c) ? randomChar() : c)),
+    );
 
-    const t0 = performance.now();
-    let raf = 0;
+    const timeouts: number[] = [];
+    const intervals: number[] = [];
 
-    const tick = () => {
-      const elapsed = performance.now() - t0;
+    let letterOrdinal = 0;
+    FULL.split("").forEach((char, i) => {
+      if (!isScrambleChar(char)) return;
 
-      if (elapsed < REVEAL_MS) {
-        setProgress(easeInOutCubic(elapsed / REVEAL_MS) * 100);
-        raf = requestAnimationFrame(tick);
-      } else if (elapsed < REVEAL_MS + HOLD_MS) {
-        setProgress(100);
-        raf = requestAnimationFrame(tick);
-      } else if (elapsed < TOTAL_MS) {
-        setProgress(100);
-        if (!fadeStartedRef.current) {
-          fadeStartedRef.current = true;
-          setFading(true);
-        }
-        raf = requestAnimationFrame(tick);
-      } else {
-        if (!completeFiredRef.current) {
-          completeFiredRef.current = true;
-          onCompleteRef.current?.();
-        }
+      const delay = letterOrdinal * 60;
+      letterOrdinal += 1;
+
+      const startT = window.setTimeout(() => {
+        const interval = window.setInterval(() => {
+          setLetters((prev) =>
+            prev.map((l, idx) =>
+              idx === i ? randomChar() : l,
+            ),
+          );
+        }, 50);
+        intervals.push(interval);
+
+        const landT = window.setTimeout(() => {
+          window.clearInterval(interval);
+          setLetters((prev) =>
+            prev.map((l, idx) => (idx === i ? char : l)),
+          );
+        }, 400);
+        timeouts.push(landT);
+      }, delay);
+      timeouts.push(startT);
+    });
+
+    const nLetters = letterOrdinal;
+    const scrambleEndMs =
+      nLetters > 0 ? (nLetters - 1) * 60 + 400 : 0;
+
+    const fadeStartT = window.setTimeout(() => {
+      setFading(true);
+    }, scrambleEndMs + HOLD_MS);
+    timeouts.push(fadeStartT);
+
+    const completeT = window.setTimeout(() => {
+      if (!completeFiredRef.current) {
+        completeFiredRef.current = true;
+        onCompleteRef.current?.();
       }
-    };
+    }, scrambleEndMs + HOLD_MS + FADE_MS);
+    timeouts.push(completeT);
 
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      for (const id of intervals) window.clearInterval(id);
+      for (const id of timeouts) window.clearTimeout(id);
+    };
   }, []);
+
+  const renderLine = (start: number, end: number) =>
+    FULL.slice(start, end)
+      .split("")
+      .map((_, j) => {
+        const i = start + j;
+        const char = letters[i] ?? "";
+        const target = FULL[i] ?? "";
+        return (
+          <span
+            key={i}
+            style={{
+              color:
+                char !== target
+                  ? "rgba(0, 229, 255, 0.7)"
+                  : "rgba(255, 255, 255, 0.92)",
+              transition: "color 0.1s ease",
+              display: "inline-block",
+              whiteSpace: "pre",
+            }}
+          >
+            {char}
+          </span>
+        );
+      });
+
+  const line2Start = LINE1.length + 1;
 
   return (
     <div
@@ -75,39 +136,52 @@ export default function OscilloscopeText({
         alignItems: "center",
         justifyContent: "center",
         zIndex: siteVisible ? 0 : overlayZIndex,
-        background: "transparent",
         opacity: siteVisible ? 0 : fading ? 0 : 1,
         transition: siteVisible ? "none" : fading ? "opacity 1s ease" : "none",
         pointerEvents: "none",
       }}
       aria-hidden={siteVisible}
     >
-      <h1 className="sr-only">
-        No capturo sonido. Traduzco intenciones.
-      </h1>
+      <h1 className="sr-only">{FULL}</h1>
       <div
         style={{
-          textAlign: "center",
-          clipPath: `inset(0 ${100 - progress}% 0 0)`,
-          transition: "none",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "0.35em",
         }}
       >
         <p
           style={{
             fontFamily: '"DM Sans", sans-serif',
             fontWeight: 200,
-            fontSize: "clamp(32px, 5vw, 68px)",
+            fontSize: "clamp(28px, 4vw, 56px)",
             color: "rgba(255,255,255,0.92)",
-            letterSpacing: "0.02em",
-            lineHeight: 1.3,
+            letterSpacing: "0.04em",
+            lineHeight: 1.4,
             margin: 0,
-            padding: 0,
-            textShadow: "0 0 30px rgba(255,255,255,0.25)",
+            textAlign: "center",
+            maxWidth: "80vw",
+            whiteSpace: "pre-wrap",
           }}
         >
-          No capturo sonido.
-          <br />
-          Traduzco intenciones.
+          {renderLine(0, LINE1.length)}
+        </p>
+        <p
+          style={{
+            fontFamily: '"DM Sans", sans-serif',
+            fontWeight: 200,
+            fontSize: "clamp(28px, 4vw, 56px)",
+            color: "rgba(255,255,255,0.92)",
+            letterSpacing: "0.04em",
+            lineHeight: 1.4,
+            margin: 0,
+            textAlign: "center",
+            maxWidth: "80vw",
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          {renderLine(line2Start, FULL.length)}
         </p>
       </div>
     </div>
