@@ -1,70 +1,41 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Raleway } from "next/font/google";
+import { DM_Sans } from "next/font/google";
 
-const raleway = Raleway({
+const dmSans = DM_Sans({
   subsets: ["latin"],
   weight: ["200"],
   display: "swap",
 });
 
-const NUM_BARS = 90;
-const BAR_W = 3;
-const GAP = 2;
-const CANVAS_H = 260;
-const MAX_BAR_H = 118;
+const DRAW_MS = 1200;
+const HIDE_MS = 999000;
 
-function barStripWidth(n: number): number {
-  return n * BAR_W + Math.max(0, n - 1) * GAP;
-}
-
-/** Perfil tipo espectro musical: bajos/medios con energía, caída hacia agudos */
-function createBaseSpectrum(n: number): number[] {
-  const out: number[] = [];
-  for (let i = 0; i < n; i++) {
-    const t = n <= 1 ? 0 : i / (n - 1);
-    let v = 0.1;
-    v += 0.38 * Math.sin(t * Math.PI * 0.88);
-    v += 0.4 * Math.exp(-Math.pow((t - 0.2) / 0.16, 2));
-    v += 0.88 * Math.exp(-Math.pow((t - 0.46) / 0.09, 2));
-    v += 0.32 * Math.exp(-Math.pow((t - 0.68) / 0.15, 2));
-    v += 0.18 * Math.exp(-Math.pow((t - 0.82) / 0.12, 2));
-    const trebleRoll = 1 - Math.pow(t, 1.45) * 0.62;
-    v *= trebleRoll;
-    out.push(Math.min(1, Math.max(0.05, v)));
-  }
-  return out;
-}
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
-}
+const FREQ_A = 3;
+const FREQ_B = 2;
+const DELTA_PER_FRAME = 0.003;
+const T_STEP = 0.018;
 
 export function CinematicLoader() {
   const [visible, setVisible] = useState(true);
-  const [showName, setShowName] = useState(false);
+  const [dim, setDim] = useState(500);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const rafRef = useRef<number>(0);
-  const heightsRef = useRef<Float32Array | null>(null);
-  const noiseRef = useRef<Float32Array | null>(null);
-  const noiseTargetRef = useRef<Float32Array | null>(null);
-  const frameRef = useRef(0);
-
-  const baseSpectrum = useMemo(() => createBaseSpectrum(NUM_BARS), []);
-  const phases = useMemo(
-    () => Float32Array.from({ length: NUM_BARS }, () => Math.random() * Math.PI * 2),
-    [],
-  );
+  const rafRef = useRef(0);
+  const deltaRef = useRef(0);
 
   useEffect(() => {
-    const tName = window.setTimeout(() => setShowName(true), 1200);
-    const tHide = window.setTimeout(() => setVisible(false), 999000);
-    return () => {
-      window.clearTimeout(tName);
-      window.clearTimeout(tHide);
-    };
+    const mq = window.matchMedia("(max-width: 767px)");
+    const sync = () => setDim(mq.matches ? 300 : 500);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  useEffect(() => {
+    const tHide = window.setTimeout(() => setVisible(false), HIDE_MS);
+    return () => window.clearTimeout(tHide);
   }, []);
 
   useEffect(() => {
@@ -74,121 +45,86 @@ export function CinematicLoader() {
     const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
 
-    if (!heightsRef.current) {
-      heightsRef.current = Float32Array.from(baseSpectrum);
-    }
-    if (!noiseRef.current) {
-      noiseRef.current = Float32Array.from({ length: NUM_BARS }, () => Math.random());
-    }
-    if (!noiseTargetRef.current) {
-      noiseTargetRef.current = Float32Array.from({ length: NUM_BARS }, () => Math.random());
-    }
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = dim;
+    const h = dim;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
 
+    const startTime = performance.now();
     let running = true;
 
-    const resize = () => {
-      const rect = canvas.getBoundingClientRect();
-      const cssW = Math.max(1, rect.width);
-      const dpr = Math.min(typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1, 2);
-      canvas.width = Math.round(cssW * dpr);
-      canvas.height = Math.round(CANVAS_H * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    };
-
-    resize();
-    const ro = new ResizeObserver(resize);
-    ro.observe(canvas);
-
-    const loop = (now: number) => {
+    const loop = () => {
       if (!running) return;
-
-      const time = now * 0.001;
-      const heights = heightsRef.current!;
-      const noise = noiseRef.current!;
-      const noiseTarget = noiseTargetRef.current!;
-      frameRef.current += 1;
-
-      if (frameRef.current % 45 === 0) {
-        for (let i = 0; i < NUM_BARS; i++) {
-          noiseTarget[i] = Math.random();
-        }
-      }
-      for (let i = 0; i < NUM_BARS; i++) {
-        noise[i] = lerp(noise[i], noiseTarget[i], 0.04);
-      }
-
-      const cssW = Math.max(1, canvas.getBoundingClientRect().width);
-      const stripW = barStripWidth(NUM_BARS);
-      const startX = (cssW - stripW) / 2;
-
-      ctx.globalCompositeOperation = "source-over";
-
-      for (let i = 0; i < NUM_BARS; i++) {
-        const wave =
-          0.62 +
-          0.38 * Math.sin(time * (1.65 + i * 0.011) + phases[i]);
-        const wave2 =
-          0.88 + 0.12 * Math.sin(time * 2.4 + phases[i] * 1.17 + noise[i] * 2.1);
-        const target = baseSpectrum[i] * wave * wave2 * (0.82 + 0.18 * noise[i]);
-        heights[i] = lerp(heights[i], target, 0.14);
-      }
-
-      ctx.clearRect(0, 0, cssW, CANVAS_H);
-
-      const scale = ctx.getTransform().a || 1;
-      const centerY = canvas.height * 0.45 * (1 / scale);
-
-      for (let i = 0; i < NUM_BARS; i++) {
-        const x = startX + i * (BAR_W + GAP);
-        const barHeight = heights[i] * MAX_BAR_H;
-
-        ctx.shadowBlur = 18;
-        ctx.shadowColor = "#00aaff";
-        const grad = ctx.createLinearGradient(
-          x,
-          centerY - barHeight,
-          x,
-          centerY,
-        );
-        grad.addColorStop(0, "#ffffff");
-        grad.addColorStop(0.5, "#00bfff");
-        grad.addColorStop(1, "#0033aa");
-        ctx.fillStyle = grad;
-        ctx.fillRect(x, centerY - barHeight, BAR_W, barHeight);
-        ctx.shadowBlur = 0;
-        ctx.shadowColor = "transparent";
-      }
-
-      for (let i = 0; i < NUM_BARS; i++) {
-        const x = startX + i * (BAR_W + GAP);
-        const barHeight = heights[i] * MAX_BAR_H;
-        const reflectH = barHeight * 0.4;
-        const grad = ctx.createLinearGradient(
-          x,
-          centerY,
-          x,
-          centerY + reflectH,
-        );
-        grad.addColorStop(0, "#ffffff");
-        grad.addColorStop(0.5, "#00bfff");
-        grad.addColorStop(1, "#0033aa");
-        ctx.fillStyle = grad;
-        ctx.globalAlpha = 0.25;
-        ctx.fillRect(x, centerY, BAR_W, reflectH);
-        ctx.globalAlpha = 1.0;
-      }
-
       rafRef.current = requestAnimationFrame(loop);
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      ctx.fillStyle = "rgba(2, 2, 2, 0.04)";
+      ctx.fillRect(0, 0, w, h);
+
+      deltaRef.current += DELTA_PER_FRAME;
+      const delta = deltaRef.current;
+
+      const elapsed = performance.now() - startTime;
+      const tMax =
+        elapsed < DRAW_MS ? (elapsed / DRAW_MS) * Math.PI * 2 : Math.PI * 2;
+
+      const cx = w / 2;
+      const cy = h / 2;
+      const A = w * 0.38;
+      const B = h * 0.38;
+
+      const points: [number, number][] = [];
+      for (let t = 0; t <= tMax; t += T_STEP) {
+        const x = cx + A * Math.sin(FREQ_A * t + delta);
+        const y = cy + B * Math.sin(FREQ_B * t);
+        points.push([x, y]);
+      }
+
+      if (points.length < 2) return;
+
+      const [fx, fy] = points[0];
+      const [lx, ly] = points[points.length - 1];
+      const grad = ctx.createLinearGradient(fx, fy, lx, ly);
+      grad.addColorStop(0, "rgba(0, 180, 255, 0.3)");
+      grad.addColorStop(0.5, "rgba(0, 230, 255, 0.9)");
+      grad.addColorStop(1, "#ffffff");
+
+      ctx.beginPath();
+      ctx.moveTo(points[0][0], points[0][1]);
+      for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i][0], points[i][1]);
+      }
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.5;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = "#00aaff";
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = "transparent";
+
+      ctx.beginPath();
+      ctx.arc(lx, ly, 3, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.shadowBlur = 24;
+      ctx.shadowColor = "#00aaff";
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = "transparent";
     };
 
     rafRef.current = requestAnimationFrame(loop);
 
     return () => {
       running = false;
-      ro.disconnect();
       cancelAnimationFrame(rafRef.current);
     };
-  }, [baseSpectrum, phases]);
+  }, [dim]);
 
   return (
     <AnimatePresence mode="wait">
@@ -207,35 +143,31 @@ export function CinematicLoader() {
             alignItems: "center",
             justifyContent: "center",
           }}
-          initial={{ opacity: 1 }}
+          initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0 }}
-          exit={{ opacity: 0, transition: { duration: 0 } }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
         >
           <canvas
             ref={canvasRef}
-            width={700}
-            height={CANVAS_H}
             style={{
-              width: "70vw",
-              maxWidth: 700,
-              height: CANVAS_H,
               display: "block",
+              backgroundColor: "transparent",
             }}
             aria-hidden
           />
           <motion.p
-            className={raleway.className}
+            className={dmSans.className}
             initial={{ opacity: 0 }}
-            animate={{ opacity: showName ? 1 : 0 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.4, duration: 0.45, ease: "easeOut" }}
             style={{
-              marginTop: 20,
+              marginTop: 32,
               marginBottom: 0,
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: 200,
               letterSpacing: "0.35em",
-              color: "rgba(255,255,255,0.85)",
+              color: "rgba(255,255,255,0.75)",
               textTransform: "uppercase",
             }}
           >
