@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { ParticleText } from "@/components/ParticleText";
+import dynamic from "next/dynamic";
 import {
   motion,
   useMotionValue,
@@ -17,6 +17,10 @@ const noiseSvg =
 const FOOTER = "PRODUCCIÓN · MEZCLA · IDENTIDAD";
 
 const springLight = { stiffness: 38, damping: 32, mass: 1.1 };
+
+const LiquidText = dynamic(() => import("@/components/LiquidText"), {
+  ssr: false,
+});
 
 export default function Home() {
   const reduce = useReducedMotion();
@@ -125,7 +129,7 @@ export default function Home() {
               },
             }}
           >
-            <ParticleText />
+            <LiquidText />
           </motion.div>
         </div>
 
