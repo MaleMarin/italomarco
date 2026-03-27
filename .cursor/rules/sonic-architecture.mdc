@@ -1,0 +1,28 @@
+---
+description: Ítalo Marco — Sonic Architecture (identidad, copy, stack)
+alwaysApply: true
+---
+
+# Ítalo Marco — Sonic Architecture
+
+Solo diseños de alta gama, minimalistas y funcionales.
+
+## Identidad visual
+
+- Estética: **Modern Dark**, minimalismo suizo, alto contraste.
+- Colores (tokens Tailwind sugeridos): fondo mate `#101010` (`void`), bordes tallados `#181818` (`carve`), texto/base claro `#F2F2F2` (`mist`), acento **azul eléctrico** `#0052FF`. Superficie: grano + micro-degradados (no negro puro plano).
+- Tipografía: sans-serif geométrica para UI; serif elegante solo para manifiestos o bloques editoriales largos.
+
+## Copy (ES/EN)
+
+- Bilingüe; tono **visceral, técnico, arquitectónico**.
+- Objetivo del mensaje: **traducir intenciones en sonido** (no marketing genérico).
+- Evitar: cursilería, “tesoro”, “sueños”, “magia” genérica u otros clichés emocionales vacíos.
+
+## Stack
+
+- React / Next.js + **Tailwind CSS**.
+- **Framer Motion**: micro-interacciones sutiles (faders, transiciones tipo audio).
+- **lucide-react** para iconografía minimalista.
+
+Al implementar UI, priorizar contraste legible, espacio en blanco deliberado y animaciones discretas alineadas con controles de audio/arquitectura sonora.

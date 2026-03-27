@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Color sólido detrás del gradiente — si falla la imagen, no hay pantalla blanca */
+  html {
+    background-color: #020202;
+    @apply m-0 h-full scroll-smooth antialiased;
+    @apply bg-film-studio bg-fixed;
+  }
+
+  body {
+    background-color: #020202;
+    @apply m-0 min-h-full min-h-[100dvh] bg-film-studio bg-fixed font-sans text-mist antialiased;
+  }
+
+  /* Viñeta más ligera para no matar contraste */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0.38;
+    mix-blend-mode: multiply;
+    background: radial-gradient(
+      ellipse 115% 90% at 50% 32%,
+      transparent 22%,
+      transparent 45%,
+      rgba(0, 0, 0, 0.45) 78%,
+      rgba(0, 0, 0, 0.82) 100%
+    );
+  }
+
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.065;
+    mix-blend-mode: soft-light;
+    background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+    background-repeat: repeat;
+  }
+
+  html.fluid-cursor-active body,
+  html.fluid-cursor-active body * {
+    cursor: none !important;
+  }
+
+  html.fluid-cursor-active [data-fluid-cursor-off],
+  html.fluid-cursor-active [data-fluid-cursor-off] * {
+    cursor: auto !important;
+  }
+}

@@ -1,0 +1,276 @@
+{
+  "en": {
+    "nav": {
+      "projects": "Projects",
+      "services": "Services",
+      "lab": "Resource Lab",
+      "contact": "Contact"
+    },
+    "projectsPage": {
+      "eyebrow": "Sonic dossier",
+      "lede": "Analog front end, mic lines, meter bridge—four signal paths as reference.",
+      "cards": [
+        {
+          "title": "Console · summing",
+          "caption": "Transformers, headroom, stereo bus."
+        },
+        {
+          "title": "Patch · preamps",
+          "caption": "Mic/DI paths, stage gain structure."
+        },
+        {
+          "title": "Microphones",
+          "caption": "Capsule, proximity, room geometry."
+        },
+        {
+          "title": "Monitors · bridge",
+          "caption": "Calibration, punch, phase read."
+        }
+      ]
+    },
+    "hero": {
+      "title": "I don't capture sound. I translate intentions.",
+      "subtitle": "Production · Mixing · Identity.",
+      "principle": "FIDELITY WITHOUT CONCESSIONS"
+    },
+    "services": {
+      "creators": {
+        "title": "Identity for Creators",
+        "description": "Sound architecture that defines communities. Custom audio packs and ghost production."
+      },
+      "live": {
+        "title": "Cult Sessions",
+        "description": "Visceral live capture. High-end audio for the indie scene and high-impact visual records."
+      },
+      "mixing": {
+        "title": "Mixing Engineering",
+        "description": "Surgical clarity without losing the raw character of your record."
+      },
+      "branding": {
+        "title": "Sonic DNA for Brands",
+        "description": "Audio logos and sound design for the infinite scroll. Give your brand a voice."
+      }
+    },
+    "cta": {
+      "main": "Tell me what's on your mind",
+      "sample": "Send me 30 seconds. Let me convince you."
+    },
+    "contact": {
+      "mailSubjectTag": "[Studio]",
+      "eyebrow": "Studio intake",
+      "headline": "Tell me what's on your mind",
+      "lede": "Send me 30 seconds. Let me convince you.",
+      "preamble": "This isn't a support queue. It's the corridor before the desk: what you write becomes the first read of the brief. Be specific—detail matters as much as level.",
+      "aside": "References, tempo, and format upfront save passes. If the idea is still fragile, say so; we sketch the signal path before touching faders.",
+      "fields": {
+        "name": {
+          "label": "Who's in the room",
+          "placeholder": "Artist, project, or label"
+        },
+        "email": {
+          "label": "Return path",
+          "placeholder": "you@domain.com"
+        },
+        "intent": {
+          "label": "What needs solving",
+          "placeholder": "Mix, capture, identity, deadline, rough state of stems…"
+        },
+        "reference": {
+          "label": "Reference (optional)",
+          "placeholder": "Private link, Drive, Dropbox—whatever holds the take"
+        }
+      },
+      "submit": "Send signal",
+      "success": {
+        "title": "Signal received",
+        "body": "I'll read what you sent and reply by email.",
+        "again": "Another message"
+      },
+      "footnote": "No backend here yet—this fires your mail client with the draft. Prefer it that way until the room is wired.",
+      "social": {
+        "instagram": "Instagram",
+        "tiktok": "TikTok",
+        "instagramUrl": "https://www.instagram.com/italomarcoo/",
+        "tiktokUrl": "https://www.tiktok.com/@italomarco1"
+      }
+    },
+    "store": {
+      "eyebrow": "Resource Lab",
+      "heading": "Textures & signals",
+      "categories": {
+        "samples": "Samples",
+        "presets": "Presets"
+      },
+      "products": [
+        {
+          "id": "santiago-concrete",
+          "category": "samples",
+          "price": 10,
+          "name": "Santiago Concrete",
+          "description": "Drum kit with urban textures processed in analog."
+        },
+        {
+          "id": "atacama-silence",
+          "category": "presets",
+          "price": 10,
+          "name": "Atacama Silence",
+          "description": "Ambient presets for granular synthesizers."
+        },
+        {
+          "id": "pacific-low-end",
+          "category": "samples",
+          "price": 10,
+          "name": "Pacific Low-End",
+          "description": "Deep sub-bass designed for club systems."
+        }
+      ],
+      "cart": {
+        "title": "Session Rack",
+        "empty": "No items in the rack.",
+        "subtotal": "Subtotal",
+        "checkout": "COMPLETE ORDER",
+        "removeAria": "Remove from rack"
+      },
+      "play": "Play preview",
+      "pause": "Pause",
+      "add": "Add to rack"
+    }
+  },
+  "es": {
+    "nav": {
+      "projects": "Proyectos",
+      "services": "Servicios",
+      "lab": "Lab de recursos",
+      "contact": "Contacto"
+    },
+    "projectsPage": {
+      "eyebrow": "Dossier sónico",
+      "lede": "Front-end analógico, líneas de micro, puente de medición—cuatro rutas de señal como referencia.",
+      "cards": [
+        {
+          "title": "Consola · sumación",
+          "caption": "Transformadores, headroom, bus estéreo."
+        },
+        {
+          "title": "Patch · previos",
+          "caption": "Rutas micro/DI, estructura de ganancia."
+        },
+        {
+          "title": "Micrófonos",
+          "caption": "Cápsula, proximidad, geometría de sala."
+        },
+        {
+          "title": "Monitores · puente",
+          "caption": "Calibración, punch, lectura de fase."
+        }
+      ]
+    },
+    "hero": {
+      "title": "No capturo sonido. Traduzco intenciones.",
+      "subtitle": "Producción · Mezcla · Identidad.",
+      "principle": "FIDELIDAD SIN CONCESIONES"
+    },
+    "services": {
+      "creators": {
+        "title": "Identidad para Creadores",
+        "description": "Arquitectura sonora que define comunidades. Packs de audio y ghost production a medida."
+      },
+      "live": {
+        "title": "Sesiones de Culto",
+        "description": "Captura visceral en vivo. Audio premium para la escena indie y registros visuales de alto impacto."
+      },
+      "mixing": {
+        "title": "Ingeniería de Mezcla",
+        "description": "Claridad quirúrgica sin perder el carácter crudo de tu grabación."
+      },
+      "branding": {
+        "title": "ADN Sónico para Marcas",
+        "description": "Audio logos y diseño sonoro para el scroll infinito. Dale una voz a tu marca."
+      }
+    },
+    "cta": {
+      "main": "Cuéntame qué tienes en la cabeza",
+      "sample": "Mándame 30 segundos. Déjame convencerte."
+    },
+    "contact": {
+      "mailSubjectTag": "[Estudio]",
+      "eyebrow": "Ingreso al estudio",
+      "headline": "Cuéntame qué tienes en la cabeza",
+      "lede": "Mándame 30 segundos. Déjame convencerte.",
+      "preamble": "Esto no es una cola de soporte. Es el pasillo previo a la consola: lo que escribas aquí es la primera lectura del brief. Sé concreto; el detalle pesa tanto como el nivel.",
+      "aside": "Referencias, tempo y formato al inicio ahorran vueltas. Si la idea aún es frágil, dilo: dibujamos la ruta de señal antes de tocar faders.",
+      "fields": {
+        "name": {
+          "label": "Quién entra al estudio",
+          "placeholder": "Artista, proyecto o sello"
+        },
+        "email": {
+          "label": "Canal de retorno",
+          "placeholder": "tu@correo.com"
+        },
+        "intent": {
+          "label": "Qué hay que resolver",
+          "placeholder": "Mezcla, captura, identidad, fecha límite, estado de los stems…"
+        },
+        "reference": {
+          "label": "Referencia (opcional)",
+          "placeholder": "Enlace privado, Drive, Dropbox—donde esté la toma"
+        }
+      },
+      "submit": "Enviar señal",
+      "success": {
+        "title": "Señal recibida",
+        "body": "Leo lo que enviaste y te respondo por correo.",
+        "again": "Otra señal"
+      },
+      "footnote": "Aún sin backend: esto abre tu cliente de correo con el borrador. Así hasta que cablemos la sala.",
+      "social": {
+        "instagram": "Instagram",
+        "tiktok": "TikTok",
+        "instagramUrl": "https://www.instagram.com/italomarcoo/",
+        "tiktokUrl": "https://www.tiktok.com/@italomarco1"
+      }
+    },
+    "store": {
+      "eyebrow": "Lab de recursos",
+      "heading": "Texturas y señales",
+      "categories": {
+        "samples": "Samples",
+        "presets": "Presets"
+      },
+      "products": [
+        {
+          "id": "santiago-concrete",
+          "category": "samples",
+          "price": 10,
+          "name": "Santiago Concrete",
+          "description": "Drum kit con texturas urbanas procesadas en analógico."
+        },
+        {
+          "id": "atacama-silence",
+          "category": "presets",
+          "price": 10,
+          "name": "Atacama Silence",
+          "description": "Presets ambient para sintetizadores granulares."
+        },
+        {
+          "id": "pacific-low-end",
+          "category": "samples",
+          "price": 10,
+          "name": "Pacific Low-End",
+          "description": "Sub-bajos profundos diseñados para sistemas de club."
+        }
+      ],
+      "cart": {
+        "title": "Session Rack",
+        "empty": "El rack está vacío.",
+        "subtotal": "Subtotal",
+        "checkout": "FINALIZAR PEDIDO",
+        "removeAria": "Quitar del rack"
+      },
+      "play": "Escuchar preview",
+      "pause": "Pausa",
+      "add": "Añadir al rack"
+    }
+  }
+}
