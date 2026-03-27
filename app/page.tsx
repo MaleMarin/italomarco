@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import {
   motion,
@@ -18,11 +18,13 @@ const FOOTER = "PRODUCCIÓN · MEZCLA · IDENTIDAD";
 
 const springLight = { stiffness: 38, damping: 32, mass: 1.1 };
 
-const LiquidText = dynamic(() => import("@/components/LiquidText"), {
-  ssr: false,
-});
+const OscilloscopeText = dynamic(
+  () => import("@/components/OscilloscopeText"),
+  { ssr: false },
+);
 
 export default function Home() {
+  const [siteVisible, setSiteVisible] = useState(false);
   const reduce = useReducedMotion();
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -69,13 +71,23 @@ export default function Home() {
         color: "#F9F9F9",
       }}
     >
+      <OscilloscopeText
+        siteVisible={siteVisible}
+        onComplete={() => setSiteVisible(true)}
+      />
       <motion.div
-        className="relative flex min-h-[calc(100dvh-3.5rem)] flex-col md:min-h-[calc(100dvh-4rem)]"
-        style={{ x: driftX, y: driftY }}
-        initial={reduce ? false : { opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
+        initial={false}
+        animate={{ opacity: siteVisible ? 1 : 0 }}
+        transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+        style={{
+          pointerEvents: siteVisible ? "auto" : "none",
+        }}
+        className="w-full"
       >
+        <motion.div
+          className="relative flex min-h-[calc(100dvh-3.5rem)] flex-col md:min-h-[calc(100dvh-4rem)]"
+          style={{ x: driftX, y: driftY }}
+        >
         {/* Luz que sigue al puntero */}
         <div
           aria-hidden
@@ -115,23 +127,10 @@ export default function Home() {
           }
         />
 
-        <div className="relative z-10 flex flex-1 flex-col justify-center px-5 pb-8 pt-10 md:px-10 md:pt-14">
-          <motion.div
-            className="mx-auto max-w-[min(100%,48rem)] text-center"
-            initial="hidden"
-            animate="visible"
-            variants={{
-              visible: {
-                transition: {
-                  staggerChildren: reduce ? 0 : 0.22,
-                  delayChildren: reduce ? 0 : 0.2,
-                },
-              },
-            }}
-          >
-            <LiquidText />
-          </motion.div>
-        </div>
+        <div
+          className="relative z-10 flex min-h-[min(45dvh,320px)] flex-1 flex-col justify-center px-5 pb-8 pt-10 md:px-10 md:pt-14"
+          aria-hidden
+        />
 
         <footer
           className="relative z-10 flex justify-center px-6 pb-10 pt-6 md:pb-12"
@@ -161,6 +160,7 @@ export default function Home() {
             ))}
           </p>
         </footer>
+        </motion.div>
       </motion.div>
     </div>
   );
