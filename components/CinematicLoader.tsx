@@ -11,7 +11,7 @@ const dmSans = DM_Sans({
 });
 
 const DRAW_MS = 1200;
-const HIDE_MS = 999000;
+const HIDE_MS = 2000;
 
 const FREQ_A = 3;
 const FREQ_B = 2;

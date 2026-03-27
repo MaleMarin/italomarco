@@ -15,6 +15,7 @@ const TRAIL_FINAL = "rgba(2, 2, 2, 0.14)";
 export type OscilloscopeTextProps = {
   onComplete?: () => void;
   siteVisible?: boolean;
+  overlayZIndex?: number;
 };
 
 async function buildStrokePoints(
@@ -90,6 +91,7 @@ async function buildStrokePoints(
 export default function OscilloscopeText({
   onComplete,
   siteVisible = false,
+  overlayZIndex = 20,
 }: OscilloscopeTextProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const onCompleteRef = useRef(onComplete);
@@ -220,7 +222,7 @@ export default function OscilloscopeText({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        zIndex: siteVisible ? 0 : 30,
+        zIndex: siteVisible ? 0 : overlayZIndex,
         opacity: siteVisible ? 0 : 1,
         pointerEvents: siteVisible ? "none" : "auto",
       }}

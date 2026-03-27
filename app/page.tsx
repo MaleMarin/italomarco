@@ -74,6 +74,7 @@ export default function Home() {
       <OscilloscopeText
         siteVisible={siteVisible}
         onComplete={() => setSiteVisible(true)}
+        overlayZIndex={20}
       />
       <motion.div
         initial={false}
