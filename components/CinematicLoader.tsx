@@ -14,13 +14,11 @@ const HIDE_MS = 999_000;
 const DESKTOP_DIM = 420;
 const MOBILE_DIM = 280;
 const TOTAL_CIRCLES = 55;
-const R_INNER_DESKTOP = 18;
-const R_OUTER_DESKTOP = 190;
-const LABEL_BLACK_DESKTOP = 22;
-const LABEL_DOT_DESKTOP = 4;
+const LABEL_BLACK_RATIO = 22 / DESKTOP_DIM;
+const LABEL_DOT_RATIO = 4 / DESKTOP_DIM;
 
-const INNER_RGB = { r: 0x00, g: 0xe5, b: 0xa0 };
-const OUTER_RGB = { r: 0xa8, g: 0xff, b: 0x3e };
+const INNER_RGB = { r: 0x7f, g: 0xff, b: 0x9e };
+const OUTER_RGB = { r: 0xc8, g: 0xff, b: 0x3e };
 
 function lerpChannel(a: number, b: number, t: number): number {
   return Math.round(a + (b - a) * t);
@@ -73,10 +71,13 @@ export function CinematicLoader() {
     canvas.style.width = `${w}px`;
     canvas.style.height = `${h}px`;
 
-    const scale = dim / DESKTOP_DIM;
+    const size = dim;
     const cx = w / 2;
     const cy = h / 2;
-    const radio = R_OUTER_DESKTOP * scale;
+    const minR = size * 0.08;
+    const maxR = size * 0.88;
+    const radiusStep =
+      TOTAL_CIRCLES <= 1 ? 0 : (maxR - minR) / TOTAL_CIRCLES;
 
     let running = true;
     let rafId = 0;
@@ -93,26 +94,25 @@ export function CinematicLoader() {
 
       ctx.save();
       ctx.globalAlpha = 0.85;
-      ctx.translate(cx, cy);
-      ctx.rotate(time * 0.4);
-      ctx.translate(-cx, -cy);
 
       for (let i = 0; i < TOTAL_CIRCLES; i++) {
-        const baseRadius =
-          (R_INNER_DESKTOP + ((R_OUTER_DESKTOP - R_INNER_DESKTOP) * i) / (TOTAL_CIRCLES - 1)) *
-          scale;
+        const baseRadius = minR + i * radiusStep;
 
         const color = lerpGrooveColor(i);
         ctx.beginPath();
         let first = true;
         for (let angle = 0; angle <= Math.PI * 2; angle += 0.017) {
-          const groove =
-            Math.sin(angle * 8 + i * 0.4 + time * 0.8) * (2 + i * 0.06);
-          const music =
-            Math.sin(angle * 3 - time * 1.2) *
-            Math.sin(i * 0.15 + time * 0.5) *
-            8;
-          const r = baseRadius + groove + music;
+          const distortZone =
+            angle > -Math.PI * 0.7 && angle < Math.PI * 0.3;
+          const groove = distortZone
+            ? 0
+            : Math.sin(angle * 40) * 0.3;
+          const wave = distortZone
+            ? Math.sin(angle * 6 + time * 1.5) *
+              (4 + i * 0.18) *
+              Math.sin(i * 0.2 + time * 0.8)
+            : 0;
+          const r = baseRadius + groove + wave;
           const x = cx + Math.cos(angle) * r;
           const y = cy + Math.sin(angle) * r;
           if (first) {
@@ -134,13 +134,13 @@ export function CinematicLoader() {
         ctx.shadowColor = "transparent";
       }
 
-      const holeR = LABEL_BLACK_DESKTOP * scale;
+      const holeR = size * LABEL_BLACK_RATIO;
       ctx.beginPath();
       ctx.arc(cx, cy, holeR, 0, Math.PI * 2);
       ctx.fillStyle = "#000000";
       ctx.fill();
 
-      const dotR = LABEL_DOT_DESKTOP * scale;
+      const dotR = size * LABEL_DOT_RATIO;
       ctx.beginPath();
       ctx.arc(cx, cy, dotR, 0, Math.PI * 2);
       ctx.fillStyle = "#ffffff";
@@ -149,24 +149,28 @@ export function CinematicLoader() {
       ctx.restore();
       ctx.globalAlpha = 1;
 
-      const x0 = cx - radio * 0.9;
-      const y0 = cy + radio * 0.9;
-      const tipX = cx - radio * 0.5;
-      const tipY = cy + radio * 0.1;
+      const x0 = cx - size * 0.65;
+      const y0 = cy + size * 0.65;
+      const tipX = cx - size * 0.15;
+      const tipY = cy + size * 0.05;
+      const needleAngle = Math.atan2(tipY - y0, tipX - x0);
 
       ctx.beginPath();
       ctx.moveTo(x0, y0);
       ctx.lineTo(tipX, tipY);
       ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2.5;
       ctx.lineCap = "round";
       ctx.stroke();
 
       ctx.save();
       ctx.translate(tipX, tipY);
-      ctx.rotate(Math.PI / 4);
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(-4, -2.5, 8, 5);
+      ctx.rotate(needleAngle);
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(-5, -3, 10, 6);
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(-5, -3, 10, 6);
       ctx.restore();
     };
 
