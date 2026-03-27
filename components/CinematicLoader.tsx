@@ -14,8 +14,6 @@ const NUM_BARS = 90;
 const BAR_W = 3;
 const GAP = 2;
 const CANVAS_H = 260;
-/** Línea base: 40% desde arriba — onda hacia arriba + reflejo abajo, más centrado visual */
-const CENTER_Y = Math.round(CANVAS_H * 0.4);
 const MAX_BAR_H = 118;
 
 function barStripWidth(n: number): number {
@@ -137,41 +135,48 @@ export function CinematicLoader() {
 
       ctx.clearRect(0, 0, cssW, CANVAS_H);
 
+      const scale = ctx.getTransform().a || 1;
+      const centerY = canvas.height * 0.45 * (1 / scale);
+
       for (let i = 0; i < NUM_BARS; i++) {
         const x = startX + i * (BAR_W + GAP);
-        const h = heights[i] * MAX_BAR_H;
-        const barTopY = CENTER_Y - h;
+        const barHeight = heights[i] * MAX_BAR_H;
 
         ctx.shadowBlur = 18;
         ctx.shadowColor = "#00aaff";
-        const grad = ctx.createLinearGradient(x, barTopY, x, CENTER_Y);
+        const grad = ctx.createLinearGradient(
+          x,
+          centerY - barHeight,
+          x,
+          centerY,
+        );
         grad.addColorStop(0, "#ffffff");
         grad.addColorStop(0.5, "#00bfff");
         grad.addColorStop(1, "#0033aa");
         ctx.fillStyle = grad;
-        ctx.fillRect(x, barTopY, BAR_W, h);
+        ctx.fillRect(x, centerY - barHeight, BAR_W, barHeight);
         ctx.shadowBlur = 0;
         ctx.shadowColor = "transparent";
       }
 
-      ctx.save();
       for (let i = 0; i < NUM_BARS; i++) {
         const x = startX + i * (BAR_W + GAP);
-        const h = heights[i] * MAX_BAR_H;
-        const grad = ctx.createLinearGradient(x, CENTER_Y, x, CENTER_Y + h);
+        const barHeight = heights[i] * MAX_BAR_H;
+        const reflectH = barHeight * 0.4;
+        const grad = ctx.createLinearGradient(
+          x,
+          centerY,
+          x,
+          centerY + reflectH,
+        );
         grad.addColorStop(0, "#ffffff");
         grad.addColorStop(0.5, "#00bfff");
         grad.addColorStop(1, "#0033aa");
         ctx.fillStyle = grad;
-        ctx.fillRect(x, CENTER_Y, BAR_W, h);
+        ctx.globalAlpha = 0.25;
+        ctx.fillRect(x, centerY, BAR_W, reflectH);
+        ctx.globalAlpha = 1.0;
       }
-      ctx.globalCompositeOperation = "destination-in";
-      const mask = ctx.createLinearGradient(0, CENTER_Y, 0, CANVAS_H);
-      mask.addColorStop(0, "rgba(255,255,255,0.4)");
-      mask.addColorStop(1, "rgba(255,255,255,0)");
-      ctx.fillStyle = mask;
-      ctx.fillRect(0, CENTER_Y, cssW, CANVAS_H - CENTER_Y);
-      ctx.restore();
 
       rafRef.current = requestAnimationFrame(loop);
     };
