@@ -2,11 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const FONT_PRIMARY = '300 72px "Source Sans 3"';
-const FONT_FALLBACK = "300 72px Arial";
 const REVEAL_MS = 3000;
-const HOLD_END_MS = 6000;
-const COMPLETE_MS = 7000;
+const HOLD_MS = 3000;
+const FADE_MS = 1000;
+const TOTAL_MS = REVEAL_MS + HOLD_MS + FADE_MS;
 
 function easeInOutCubic(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -18,156 +17,54 @@ export type OscilloscopeTextProps = {
   overlayZIndex?: number;
 };
 
-function drawGlowingText(
-  ctx: CanvasRenderingContext2D,
-  w: number,
-  h: number,
-  fontSpec: string,
-) {
-  ctx.font = fontSpec;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-
-  ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
-  ctx.shadowBlur = 20;
-  ctx.shadowColor = "rgba(255, 255, 255, 0.4)";
-  ctx.fillText("No capturo sonido.", w / 2, h / 2 - 50);
-  ctx.fillText("Traduzco intenciones.", w / 2, h / 2 + 50);
-
-  ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
-  ctx.shadowBlur = 40;
-  ctx.shadowColor = "rgba(200, 220, 255, 0.3)";
-  ctx.fillText("No capturo sonido.", w / 2, h / 2 - 50);
-  ctx.fillText("Traduzco intenciones.", w / 2, h / 2 + 50);
-
-  ctx.shadowBlur = 0;
-  ctx.shadowColor = "transparent";
-}
-
 export default function OscilloscopeText({
   onComplete,
   siteVisible = false,
   overlayZIndex = 20,
 }: OscilloscopeTextProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [progress, setProgress] = useState(0);
+  const [fading, setFading] = useState(false);
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
-
-  const [logicalSize, setLogicalSize] = useState({ w: 800, h: 320 });
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
-    const sync = () =>
-      setLogicalSize({
-        w: Math.max(1, window.innerWidth),
-        h: mq.matches ? 240 : 320,
-      });
-    sync();
-    window.addEventListener("resize", sync);
-    mq.addEventListener("change", sync);
-    return () => {
-      window.removeEventListener("resize", sync);
-      mq.removeEventListener("change", sync);
-    };
-  }, []);
+  const completeFiredRef = useRef(false);
+  const fadeStartedRef = useRef(false);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    completeFiredRef.current = false;
+    fadeStartedRef.current = false;
+    setProgress(0);
+    setFading(false);
 
-    const ctx = canvas.getContext("2d", { alpha: true });
-    if (!ctx) return;
+    const t0 = performance.now();
+    let raf = 0;
 
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const { w, h } = logicalSize;
+    const tick = () => {
+      const elapsed = performance.now() - t0;
 
-    canvas.width = Math.round(w * dpr);
-    canvas.height = Math.round(h * dpr);
-    canvas.style.width = `${w}px`;
-    canvas.style.height = `${h}px`;
-
-    let running = true;
-    let rafId = 0;
-    let completeFired = false;
-
-    void (async () => {
-      await document.fonts.ready;
-      try {
-        await document.fonts.load(FONT_PRIMARY);
-      } catch {
-        /* ignore */
+      if (elapsed < REVEAL_MS) {
+        setProgress(easeInOutCubic(elapsed / REVEAL_MS) * 100);
+        raf = requestAnimationFrame(tick);
+      } else if (elapsed < REVEAL_MS + HOLD_MS) {
+        setProgress(100);
+        raf = requestAnimationFrame(tick);
+      } else if (elapsed < TOTAL_MS) {
+        setProgress(100);
+        if (!fadeStartedRef.current) {
+          fadeStartedRef.current = true;
+          setFading(true);
+        }
+        raf = requestAnimationFrame(tick);
+      } else {
+        if (!completeFiredRef.current) {
+          completeFiredRef.current = true;
+          onCompleteRef.current?.();
+        }
       }
-
-      const fontSpec = document.fonts.check(FONT_PRIMARY)
-        ? FONT_PRIMARY
-        : FONT_FALLBACK;
-
-      if (!running) return;
-
-      const t0 = performance.now();
-
-      const tick = () => {
-        if (!running) return;
-
-        const elapsed = performance.now() - t0;
-
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        ctx.clearRect(0, 0, w, h);
-
-        if (elapsed >= COMPLETE_MS) {
-          if (!completeFired) {
-            completeFired = true;
-            onCompleteRef.current?.();
-          }
-          return;
-        }
-
-        if (elapsed >= HOLD_END_MS) {
-          const fadeProgress = (elapsed - HOLD_END_MS) / 1000;
-          ctx.save();
-          ctx.globalAlpha = Math.max(0, 1 - fadeProgress);
-          drawGlowingText(ctx, w, h, fontSpec);
-          ctx.restore();
-          ctx.globalAlpha = 1;
-          rafId = requestAnimationFrame(tick);
-          return;
-        }
-
-        const revealT = Math.min(1, elapsed / REVEAL_MS);
-        const progress =
-          elapsed < REVEAL_MS ? easeInOutCubic(revealT) : 1;
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(0, 0, w * progress, h);
-        ctx.clip();
-        drawGlowingText(ctx, w, h, fontSpec);
-        ctx.restore();
-
-        if (progress > 0 && progress < 1) {
-          const tipX = w * progress;
-          const tipY = h / 2;
-          ctx.beginPath();
-          ctx.arc(tipX, tipY, 2, 0, Math.PI * 2);
-          ctx.fillStyle = "#ffffff";
-          ctx.shadowBlur = 15;
-          ctx.shadowColor = "rgba(200, 220, 255, 0.8)";
-          ctx.fill();
-          ctx.shadowBlur = 0;
-          ctx.shadowColor = "transparent";
-        }
-
-        rafId = requestAnimationFrame(tick);
-      };
-
-      rafId = requestAnimationFrame(tick);
-    })();
-
-    return () => {
-      running = false;
-      cancelAnimationFrame(rafId);
     };
-  }, [logicalSize.w, logicalSize.h]);
+
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   return (
     <div
@@ -178,24 +75,41 @@ export default function OscilloscopeText({
         alignItems: "center",
         justifyContent: "center",
         zIndex: siteVisible ? 0 : overlayZIndex,
-        opacity: siteVisible ? 0 : 1,
-        pointerEvents: siteVisible ? "none" : "auto",
-        backgroundColor: "transparent",
+        background: "transparent",
+        opacity: siteVisible ? 0 : fading ? 0 : 1,
+        transition: siteVisible ? "none" : fading ? "opacity 1s ease" : "none",
+        pointerEvents: "none",
       }}
       aria-hidden={siteVisible}
     >
       <h1 className="sr-only">
         No capturo sonido. Traduzco intenciones.
       </h1>
-      <canvas
-        ref={canvasRef}
+      <div
         style={{
-          display: "block",
-          margin: "0 auto",
-          backgroundColor: "transparent",
+          textAlign: "center",
+          clipPath: `inset(0 ${100 - progress}% 0 0)`,
+          transition: "none",
         }}
-        aria-hidden
-      />
+      >
+        <p
+          style={{
+            fontFamily: '"DM Sans", sans-serif',
+            fontWeight: 200,
+            fontSize: "clamp(32px, 5vw, 68px)",
+            color: "rgba(255,255,255,0.92)",
+            letterSpacing: "0.02em",
+            lineHeight: 1.3,
+            margin: 0,
+            padding: 0,
+            textShadow: "0 0 30px rgba(255,255,255,0.25)",
+          }}
+        >
+          No capturo sonido.
+          <br />
+          Traduzco intenciones.
+        </p>
+      </div>
     </div>
   );
 }
