@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { ParticleText } from "@/components/ParticleText";
 import {
   motion,
   useMotionValue,
@@ -124,34 +125,7 @@ export default function Home() {
               },
             }}
           >
-            <motion.h1
-              className="font-serif text-[clamp(2.25rem,8vw,5.25rem)] font-normal leading-[0.92] tracking-tight text-[#F9F9F9] md:text-7xl lg:text-8xl"
-              variants={{
-                hidden: {
-                  opacity: reduce ? 1 : 0,
-                  y: reduce ? 0 : 24,
-                  filter: reduce ? "blur(0px)" : "blur(14px)",
-                },
-                visible: {
-                  opacity: 1,
-                  y: 0,
-                  filter: "blur(0px)",
-                  transition: {
-                    duration: reduce ? 0 : 1.05,
-                    ease: [0.22, 1, 0.36, 1],
-                  },
-                },
-              }}
-              style={{
-                textShadow:
-                  "0 2px 80px rgba(0,0,0,0.75), 0 0 60px rgba(0,82,255,0.08)",
-              }}
-            >
-              <span className="block italic">No capturo sonido.</span>
-              <span className="mt-1 block not-italic tracking-tighter">
-                Traduzco intenciones.
-              </span>
-            </motion.h1>
+            <ParticleText />
           </motion.div>
         </div>
 
