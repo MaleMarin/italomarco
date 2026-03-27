@@ -78,7 +78,7 @@ export default function Home() {
           className="pointer-events-none absolute inset-0 z-0"
           style={{
             background:
-              "radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 38%), #242424 0%, #0a0a0a 45%, #020202 100%)",
+              "radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 38%), #7a7f8c 0%, #5c616e 14%, #3d424f 32%, #22262f 56%, #101216 78%, #020202 100%)",
           }}
         />
 
