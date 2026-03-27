@@ -3,14 +3,23 @@
 import { useEffect, useRef } from "react";
 
 const ASSEMBLE_DURATION_S = 1.2;
-const MOUSE_RADIUS = 80;
+const MOUSE_RADIUS = 60;
 const MAX_REPEL = 120;
-const POSITION_LERP = 0.08;
+const POSITION_LERP = 0.06;
 const COLOR_LERP = 0.12;
-const SAMPLE_GAP = 5;
+const SAMPLE_GAP = 3;
+const PARTICLE_RADIUS = 1;
 
-const WHITE = { r: 1, g: 1, b: 1, a: 0.9 };
-const MINT = { r: 0, g: 0xe5 / 255, b: 0xa0 / 255, a: 0.95 };
+const H_PAD = 40;
+const FONT_FIT_START = 68;
+const FONT_FIT_STEP = 4;
+const FONT_FIT_MIN = 16;
+
+const LINE1 = "No capturo sonido.";
+const LINE2 = "Traduzco intenciones.";
+
+const WHITE = { r: 1, g: 1, b: 1, a: 0.85 };
+const MINT = { r: 0, g: 0xe5 / 255, b: 0xa0 / 255, a: 1 };
 
 function easeOutExpo(t: number): number {
   return t >= 1 ? 1 : 1 - Math.pow(2, -10 * t);
@@ -48,14 +57,42 @@ type Particle = {
   ca: number;
 };
 
-function getPlayfairStack(): string {
-  if (typeof document === "undefined") {
-    return '"Playfair Display", Georgia, serif';
+function fontCss(size: number): string {
+  return `italic 600 ${size}px "Playfair Display"`;
+}
+
+async function ensurePlayfairLoaded(): Promise<void> {
+  await document.fonts.ready;
+  const probe = fontCss(64);
+  if (typeof document.fonts.check === "function" && !document.fonts.check(probe)) {
+    try {
+      const font = new FontFace(
+        "Playfair Display",
+        "url(https://fonts.gstatic.com/s/playfairdisplay/v37/nuFiD-vYSZviVYUb_rj3ij__anPXDTzYgEM86xQ.woff2)",
+      );
+      await font.load();
+      document.fonts.add(font);
+      await document.fonts.ready;
+    } catch {
+      /* fallback: layout font from CSS may still apply */
+    }
   }
-  const raw = getComputedStyle(document.documentElement)
-    .getPropertyValue("--font-playfair")
-    .trim();
-  return raw || '"Playfair Display", Georgia, serif';
+}
+
+function fitFontSize(maxLineWidth: number): number {
+  const probe = document.createElement("canvas");
+  const octx = probe.getContext("2d");
+  if (!octx) return FONT_FIT_MIN;
+
+  for (let fs = FONT_FIT_START; fs >= FONT_FIT_MIN; fs -= FONT_FIT_STEP) {
+    octx.font = fontCss(fs);
+    const w1 = octx.measureText(LINE1).width;
+    const w2 = octx.measureText(LINE2).width;
+    if (w1 <= maxLineWidth && w2 <= maxLineWidth) {
+      return fs;
+    }
+  }
+  return FONT_FIT_MIN;
 }
 
 function buildParticles(
@@ -72,14 +109,14 @@ function buildParticles(
 
   const cx = width / 2;
   const cy = height / 2;
-  const lineOffset = Math.min(50, fontSize * 0.7);
-  const ff = getPlayfairStack();
-  octx.font = `italic ${fontSize}px ${ff}`;
+  const lineOffset = Math.min(56, fontSize * 0.72);
+
+  octx.font = fontCss(fontSize);
   octx.fillStyle = "#ffffff";
   octx.textAlign = "center";
   octx.textBaseline = "middle";
-  octx.fillText("No capturo sonido.", cx, cy - lineOffset);
-  octx.fillText("Traduzco intenciones.", cx, cy + lineOffset);
+  octx.fillText(LINE1, cx, cy - lineOffset);
+  octx.fillText(LINE2, cx, cy + lineOffset);
 
   const imageData = octx.getImageData(0, 0, width, height);
   const data = imageData.data;
@@ -92,11 +129,6 @@ function buildParticles(
         const sx = Math.random() * window.innerWidth - rect.left;
         const sy = Math.random() * window.innerHeight - rect.top;
         const delayMs = Math.random() * 400;
-        const onFirstLine = y < height * 0.48;
-        const r = onFirstLine
-          ? 2.5 + Math.random() * 1
-          : 2.5 + Math.random() * 0.55;
-        const clampedR = Math.min(3.5, r);
         particles.push({
           sx,
           sy,
@@ -105,7 +137,7 @@ function buildParticles(
           x: sx,
           y: sy,
           delayMs,
-          r: clampedR,
+          r: PARTICLE_RADIUS,
           cr: WHITE.r,
           cg: WHITE.g,
           cb: WHITE.b,
@@ -132,57 +164,68 @@ export function ParticleText() {
     const canvas = canvasRef.current;
     if (!container || !canvas) return;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
 
     let gen = 0;
 
-    const applyLayout = (): {
-      cssW: number;
-      cssH: number;
-      dpr: number;
-      fontSize: number;
-    } => {
-      const rect = container.getBoundingClientRect();
-      const cssW = Math.max(1, Math.round(rect.width));
+    const applyLayout = (): { cssW: number; cssH: number; dpr: number } => {
       const mobile = window.matchMedia("(max-width: 767px)").matches;
-      const cssH = mobile ? 220 : 280;
-      const fontSize = mobile ? 36 : 72;
+      const cssH = mobile ? 260 : 320;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const cssW = Math.max(1, Math.round(window.innerWidth));
 
+      container.style.width = "100vw";
+      container.style.marginLeft = "calc(50% - 50vw)";
       container.style.height = `${cssH}px`;
       canvas.style.width = `${cssW}px`;
       canvas.style.height = `${cssH}px`;
+      canvas.style.backgroundColor = "transparent";
       canvas.width = Math.round(cssW * dpr);
       canvas.height = Math.round(cssH * dpr);
 
-      return { cssW, cssH, dpr, fontSize };
+      return { cssW, cssH, dpr };
     };
 
     const layoutSnapRef: {
       current: { cssW: number; cssH: number; dpr: number } | null;
     } = { current: null };
 
-    const rebuild = () => {
-      const { cssW, cssH, dpr, fontSize } = applyLayout();
+    const rebuild = async (g: number): Promise<{
+      cssW: number;
+      cssH: number;
+      dpr: number;
+    } | null> => {
+      const { cssW, cssH, dpr } = applyLayout();
+      if (g !== gen) return null;
+
+      await ensurePlayfairLoaded();
+      if (g !== gen) return null;
+
+      const maxLineWidth = Math.max(1, cssW - 2 * H_PAD);
+      const fontSize = fitFontSize(maxLineWidth);
       const r = container.getBoundingClientRect();
       particlesRef.current = buildParticles(cssW, cssH, fontSize, r);
       startTimeRef.current = performance.now();
+
       return { cssW, cssH, dpr };
     };
 
-    const loop = (now: number) => {
+    const loop = () => {
       if (!runningRef.current) return;
       const snap = layoutSnapRef.current;
-      if (!snap) {
+      const c = canvasRef.current;
+      if (!snap || !c) {
         rafRef.current = requestAnimationFrame(loop);
         return;
       }
       const { cssW, cssH, dpr } = snap;
 
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, c.width, c.height);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, cssW, cssH);
 
+      const now = performance.now();
       const mx = mouseRef.current.x;
       const my = mouseRef.current.y;
       const elapsed = (now - startTimeRef.current) / 1000;
@@ -235,18 +278,17 @@ export function ParticleText() {
 
     const start = () => {
       const g = ++gen;
-      void document.fonts.ready.then(() => {
-        if (g !== gen) return;
-        const out = rebuild();
+      void (async () => {
+        const out = await rebuild(g);
+        if (g !== gen || !out || !runningRef.current) return;
         layoutSnapRef.current = {
           cssW: out.cssW,
           cssH: out.cssH,
           dpr: out.dpr,
         };
-        if (!runningRef.current) return;
         cancelAnimationFrame(rafRef.current);
         rafRef.current = requestAnimationFrame(loop);
-      });
+      })();
     };
 
     runningRef.current = true;
@@ -284,8 +326,8 @@ export function ParticleText() {
       ref={containerRef}
       style={{
         position: "relative",
-        width: "100%",
-        height: 280,
+        width: "100vw",
+        height: 320,
         zIndex: 0,
       }}
     >
@@ -295,9 +337,9 @@ export function ParticleText() {
       <canvas
         ref={canvasRef}
         style={{
+          display: "block",
           width: "100%",
           height: "100%",
-          display: "block",
           backgroundColor: "transparent",
         }}
         aria-hidden
