@@ -3,7 +3,20 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-const FONT_SPEC = 'italic 600 72px "Playfair Display"';
+const FONT_DM = '300 68px "DM Sans"';
+const FONT_FALLBACK = '300 68px "Helvetica Neue", sans-serif';
+
+async function loadUiFont(): Promise<string> {
+  try {
+    await document.fonts.load(FONT_DM);
+    if (typeof document.fonts.check === "function" && document.fonts.check(FONT_DM)) {
+      return FONT_DM;
+    }
+  } catch {
+    /* use fallback */
+  }
+  return FONT_FALLBACK;
+}
 
 const VERTEX_SHADER = `
   varying vec2 vUv;
@@ -33,31 +46,48 @@ const FRAGMENT_SHADER = `
   }
 `;
 
-function drawTextCanvas(canvas: HTMLCanvasElement, w: number, h: number) {
+function drawTextCanvas(
+  canvas: HTMLCanvasElement,
+  w: number,
+  h: number,
+  font: string,
+) {
   const octx = canvas.getContext("2d");
   if (!octx) return;
   canvas.width = w;
   canvas.height = h;
   octx.clearRect(0, 0, w, h);
-  octx.font = FONT_SPEC;
+  octx.font = font;
   octx.fillStyle = "white";
   octx.textAlign = "center";
   octx.textBaseline = "middle";
+  octx.letterSpacing = "0.05em";
   octx.fillText("No capturo sonido.", w / 2, h / 2 - 44);
   octx.fillText("Traduzco intenciones.", w / 2, h / 2 + 44);
 }
 
 export default function LiquidText() {
   const wrapRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mountRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const wrap = wrapRef.current;
-    const canvasEl = canvasRef.current;
-    if (!wrap || !canvasEl) return;
+    const mount = mountRef.current;
+    if (!wrap || !mount) return;
 
     let rafId = 0;
     let disposed = false;
+
+    const renderer = new THREE.WebGLRenderer({
+      alpha: true,
+      antialias: true,
+    });
+    const glCanvas = renderer.domElement;
+    glCanvas.style.display = "block";
+    glCanvas.style.width = "100%";
+    glCanvas.style.height = "100%";
+    glCanvas.style.backgroundColor = "transparent";
+    mount.appendChild(glCanvas);
 
     const targetMouse = new THREE.Vector2(0.5, 0.5);
     let strengthTarget = 0;
@@ -67,11 +97,6 @@ export default function LiquidText() {
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     camera.position.z = 1;
 
-    const renderer = new THREE.WebGLRenderer({
-      canvas: canvasEl,
-      alpha: true,
-      antialias: true,
-    });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setClearColor(0x000000, 0);
 
@@ -103,7 +128,7 @@ export default function LiquidText() {
 
     const syncSize = async () => {
       if (disposed) return;
-      await document.fonts.load(FONT_SPEC);
+      const uiFont = await loadUiFont();
       if (disposed) return;
 
       const mobile = window.matchMedia("(max-width: 767px)").matches;
@@ -119,13 +144,13 @@ export default function LiquidText() {
 
       const bw = renderer.domElement.width;
       const bh = renderer.domElement.height;
-      drawTextCanvas(offscreen, bw, bh);
+      drawTextCanvas(offscreen, bw, bh, uiFont);
       texture.image = offscreen;
       texture.needsUpdate = true;
     };
 
     const onMove = (e: MouseEvent) => {
-      const r = canvasEl.getBoundingClientRect();
+      const r = glCanvas.getBoundingClientRect();
       const x = (e.clientX - r.left) / Math.max(1, r.width);
       const y = 1 - (e.clientY - r.top) / Math.max(1, r.height);
       targetMouse.set(
@@ -141,8 +166,8 @@ export default function LiquidText() {
       dissolving = true;
     };
 
-    canvasEl.addEventListener("mousemove", onMove);
-    canvasEl.addEventListener("mouseleave", onLeave);
+    glCanvas.addEventListener("mousemove", onMove);
+    glCanvas.addEventListener("mouseleave", onLeave);
 
     const ro = new ResizeObserver(() => {
       void syncSize();
@@ -169,13 +194,16 @@ export default function LiquidText() {
     return () => {
       disposed = true;
       cancelAnimationFrame(rafId);
-      canvasEl.removeEventListener("mousemove", onMove);
-      canvasEl.removeEventListener("mouseleave", onLeave);
+      glCanvas.removeEventListener("mousemove", onMove);
+      glCanvas.removeEventListener("mouseleave", onLeave);
       ro.disconnect();
       texture.dispose();
       geometry.dispose();
       material.dispose();
       renderer.dispose();
+      if (glCanvas.parentNode === mount) {
+        mount.removeChild(glCanvas);
+      }
     };
   }, []);
 
@@ -191,13 +219,11 @@ export default function LiquidText() {
       <h1 className="sr-only">
         No capturo sonido. Traduzco intenciones.
       </h1>
-      <canvas
-        ref={canvasRef}
+      <div
+        ref={mountRef}
         style={{
-          display: "block",
           width: "100%",
           height: "100%",
-          backgroundColor: "transparent",
         }}
         aria-hidden
       />

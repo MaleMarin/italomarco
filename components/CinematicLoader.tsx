@@ -61,7 +61,7 @@ export function CinematicLoader() {
 
   useEffect(() => {
     const tName = window.setTimeout(() => setShowName(true), 1200);
-    const tHide = window.setTimeout(() => setVisible(false), 2000);
+    const tHide = window.setTimeout(() => setVisible(false), 999000);
     return () => {
       window.clearTimeout(tName);
       window.clearTimeout(tHide);
@@ -204,12 +204,8 @@ export function CinematicLoader() {
             justifyContent: "center",
           }}
           initial={{ opacity: 1 }}
-          animate={{ opacity: [1, 1, 0] }}
-          transition={{
-            duration: 2,
-            times: [0, 0.9, 1],
-            ease: ["linear", "linear", "easeInOut"],
-          }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0 }}
           exit={{ opacity: 0, transition: { duration: 0 } }}
         >
           <canvas
