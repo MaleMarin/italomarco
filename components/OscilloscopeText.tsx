@@ -17,20 +17,42 @@ export type OscilloscopeTextProps = {
   siteVisible?: boolean;
 };
 
-function buildStrokePoints(
+async function buildStrokePoints(
   w: number,
   h: number,
 ): Promise<{ x: number; y: number }[]> {
-  return (async () => {
-    await document.fonts.load(FONT_SPEC);
+  await document.fonts.ready;
 
-    const off = document.createElement("canvas");
-    off.width = w;
-    off.height = h;
-    const octx = off.getContext("2d", { willReadFrequently: true });
-    if (!octx) return [];
+  try {
+    await Promise.all([
+      document.fonts.load(FONT_SPEC),
+      document.fonts.load('300 72px "DM Sans"'),
+      document.fonts.load('400 72px "DM Sans"'),
+    ]);
+  } catch {
+    /* ignore */
+  }
 
-    octx.font = FONT_SPEC;
+  await new Promise((r) => setTimeout(r, 100));
+
+  const off = document.createElement("canvas");
+  off.width = w;
+  off.height = h;
+  const octx = off.getContext("2d", { willReadFrequently: true });
+  if (!octx) return [];
+
+  const fonts = [
+    FONT_SPEC,
+    '300 72px "DM Sans"',
+    '72px "Helvetica Neue"',
+    "72px Arial",
+  ];
+
+  let pointsFound: { x: number; y: number }[] = [];
+
+  for (const fontSpec of fonts) {
+    octx.clearRect(0, 0, w, h);
+    octx.font = fontSpec;
     octx.fillStyle = "white";
     octx.textAlign = "center";
     octx.textBaseline = "middle";
@@ -47,20 +69,22 @@ function buildStrokePoints(
       for (let x = 0; x < w; x += gap) {
         const i = (y * w + x) * 4;
         if (data[i + 3] > 128) {
-          if (y < midY) {
-            line1.push({ x, y });
-          } else {
-            line2.push({ x, y });
-          }
+          if (y < midY) line1.push({ x, y });
+          else line2.push({ x, y });
         }
       }
     }
 
     line1.sort((a, b) => (a.y !== b.y ? a.y - b.y : a.x - b.x));
     line2.sort((a, b) => (a.y !== b.y ? a.y - b.y : a.x - b.x));
+    pointsFound = [...line1, ...line2];
 
-    return [...line1, ...line2];
-  })();
+    if (pointsFound.length > 50) break;
+  }
+
+  console.log("[OscilloscopeText] points found:", pointsFound.length);
+
+  return pointsFound;
 }
 
 export default function OscilloscopeText({
