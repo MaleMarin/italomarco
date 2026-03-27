@@ -1,38 +1,12 @@
 "use client";
+import { useEffect, useState } from "react";
 
-import { useEffect } from "react";
-import { motion } from "framer-motion";
-
-const LINE1 = ["No", "capturo", "sonido."];
-const LINE2 = ["Traduzco", "intenciones."];
-const ALL_WORDS = [...LINE1, ...LINE2];
-
-const wordVariants = {
-  hidden: {
-    opacity: 0,
-    filter: "blur(12px)",
-    y: 6,
-  },
-  visible: {
-    opacity: 1,
-    filter: "blur(0px)",
-    y: 0,
-  },
-};
-
-const containerVariants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.28,
-      delayChildren: 0.1,
-    },
-  },
-  exit: {
-    opacity: 0,
-    transition: { duration: 1, ease: "easeInOut" },
-  },
-};
+const WORDS = ["No", "capturo", "sonido.", "Traduzco", "intenciones."];
+const LOADER_DELAY  = 2300;
+const STAGGER       = 680;
+const WORD_DURATION = 1000;
+const HOLD_AFTER    = 4000;
+const FADE_OUT      = 1000;
 
 export type OscilloscopeTextProps = {
   onComplete?: () => void;
@@ -45,24 +19,58 @@ export default function OscilloscopeText({
   siteVisible = false,
   overlayZIndex = 20,
 }: OscilloscopeTextProps) {
-  const totalReveal = 0.1 + 0.28 * ALL_WORDS.length + 0.5;
-  const holdTime = 3000;
+  // Which words have "landed" (transitioned to white)
+  const [landed, setLanded] = useState<boolean[]>(WORDS.map(() => false));
+  const [wrapperVisible, setWrapperVisible] = useState(false);
+  const [opacity, setOpacity] = useState(0);
+  const [fading, setFading] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      onComplete?.();
-    }, totalReveal * 1000 + holdTime);
-    return () => clearTimeout(timer);
-  }, [onComplete, totalReveal]);
+    if (siteVisible) return;
+    const timers: ReturnType<typeof setTimeout>[] = [];
 
-  if (siteVisible) return null;
+    // Wait for loader to finish, then fade wrapper in
+    const start = setTimeout(() => {
+      setWrapperVisible(true);
+      setOpacity(1);
+
+      // Land each word one by one
+      WORDS.forEach((_, i) => {
+        timers.push(
+          setTimeout(() => {
+            setLanded((prev) => {
+              const next = [...prev];
+              next[i] = true;
+              return next;
+            });
+          }, i * STAGGER)
+        );
+      });
+
+      const totalReveal = (WORDS.length - 1) * STAGGER + WORD_DURATION;
+
+      // Fade out wrapper
+      timers.push(
+        setTimeout(() => setFading(true), totalReveal + HOLD_AFTER)
+      );
+
+      // Call onComplete
+      timers.push(
+        setTimeout(() => onComplete?.(), totalReveal + HOLD_AFTER + FADE_OUT)
+      );
+    }, LOADER_DELAY);
+
+    timers.push(start);
+    return () => timers.forEach(clearTimeout);
+  }, [onComplete, siteVisible]);
+
+  if (siteVisible || !wrapperVisible) return null;
+
+  const line1 = WORDS.slice(0, 3);
+  const line2 = WORDS.slice(3);
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
+    <div
       style={{
         position: "fixed",
         inset: 0,
@@ -72,66 +80,69 @@ export default function OscilloscopeText({
         justifyContent: "center",
         zIndex: overlayZIndex,
         pointerEvents: "none",
-        gap: "0.15em",
+        gap: "0.4em",
+        // Wrapper fades in after loader, then fades out
+        opacity: fading ? 0 : opacity,
+        transition: fading
+          ? `opacity ${FADE_OUT}ms ease`
+          : "opacity 400ms ease",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          gap: "0.35em",
-          flexWrap: "wrap",
-          justifyContent: "center",
-        }}
-      >
-        {LINE1.map((word, i) => (
-          <motion.span
-            key={`l1-${i}`}
-            variants={wordVariants}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            style={{
-              fontFamily: '"DM Sans", sans-serif',
-              fontWeight: 200,
-              fontSize: "clamp(32px, 5.5vw, 72px)",
-              color: "rgba(255,255,255,0.92)",
-              letterSpacing: "-0.01em",
-              lineHeight: 1.15,
-              display: "inline-block",
-              textShadow: "0 0 40px rgba(255,255,255,0.12)",
-            }}
-          >
-            {word}
-          </motion.span>
-        ))}
-      </div>
+      {[line1, line2].map((line, lineIdx) => (
+        <div
+          key={lineIdx}
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            gap: "0.4em",
+            alignItems: "baseline",
+          }}
+        >
+          {line.map((word, i) => {
+            const globalIdx = lineIdx === 0 ? i : i + 3;
+            const isLanded = landed[globalIdx];
 
-      <div
-        style={{
-          display: "flex",
-          gap: "0.35em",
-          flexWrap: "wrap",
-          justifyContent: "center",
-        }}
-      >
-        {LINE2.map((word, i) => (
-          <motion.span
-            key={`l2-${i}`}
-            variants={wordVariants}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            style={{
-              fontFamily: '"DM Sans", sans-serif',
-              fontWeight: 200,
-              fontSize: "clamp(32px, 5.5vw, 72px)",
-              color: "rgba(255,255,255,0.92)",
-              letterSpacing: "-0.01em",
-              lineHeight: 1.15,
-              display: "inline-block",
-              textShadow: "0 0 40px rgba(255,255,255,0.12)",
-            }}
-          >
-            {word}
-          </motion.span>
-        ))}
-      </div>
-    </motion.div>
+            return (
+              <span
+                key={globalIdx}
+                style={{
+                  fontFamily:
+                    '"DM Sans", "Helvetica Neue", Arial, sans-serif',
+                  fontWeight: 200,
+                  fontSize: "clamp(28px, 5vw, 68px)",
+                  letterSpacing: "-0.01em",
+                  lineHeight: 1.1,
+                  display: "inline-block",
+                  whiteSpace: "nowrap",
+                  // START state: green, blurred, invisible, shifted down
+                  // LANDED state: white, sharp, visible, in place
+                  opacity: isLanded ? 1 : 0,
+                  filter: isLanded ? "blur(0px)" : "blur(18px)",
+                  transform: isLanded
+                    ? "translateY(0px)"
+                    : "translateY(14px)",
+                  color: isLanded
+                    ? "rgba(255,255,255,0.93)"
+                    : "#a8ff3e",
+                  textShadow: isLanded
+                    ? "0 0 0px rgba(168,255,62,0)"
+                    : "0 0 32px rgba(168,255,62,1)",
+                  // CSS transitions fire because element is always in DOM
+                  transition: [
+                    `opacity ${WORD_DURATION}ms cubic-bezier(0.16,1,0.3,1)`,
+                    `filter ${WORD_DURATION}ms cubic-bezier(0.16,1,0.3,1)`,
+                    `transform ${WORD_DURATION}ms cubic-bezier(0.16,1,0.3,1)`,
+                    `color ${Math.round(WORD_DURATION * 1.5)}ms ease-out`,
+                    `text-shadow ${Math.round(WORD_DURATION * 1.8)}ms ease-out`,
+                  ].join(", "),
+                }}
+              >
+                {word}
+              </span>
+            );
+          })}
+        </div>
+      ))}
+    </div>
   );
 }
