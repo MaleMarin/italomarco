@@ -74,10 +74,15 @@ export function CinematicLoader() {
     const size = dim;
     const cx = w / 2;
     const cy = h / 2;
-    const minR = size * 0.08;
-    const maxR = size * 0.88;
+    const minR = size * 0.06;
+    const maxR = size * 0.72;
     const radiusStep =
       TOTAL_CIRCLES <= 1 ? 0 : (maxR - minR) / TOTAL_CIRCLES;
+
+    const zoneStart = -Math.PI * 0.33;
+    const zoneEnd = Math.PI * 0.44;
+
+    canvas.style.backgroundColor = "transparent";
 
     let running = true;
     let rafId = 0;
@@ -86,7 +91,7 @@ export function CinematicLoader() {
       if (!running) return;
       rafId = requestAnimationFrame(loop);
 
-      timeRef.current += 0.016;
+      timeRef.current += 0.018;
       const time = timeRef.current;
 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -101,17 +106,25 @@ export function CinematicLoader() {
         const color = lerpGrooveColor(i);
         ctx.beginPath();
         let first = true;
+
         for (let angle = 0; angle <= Math.PI * 2; angle += 0.017) {
-          const distortZone =
-            angle > -Math.PI * 0.7 && angle < Math.PI * 0.3;
-          const groove = distortZone
-            ? 0
-            : Math.sin(angle * 40) * 0.3;
-          const wave = distortZone
-            ? Math.sin(angle * 6 + time * 1.5) *
-              (4 + i * 0.18) *
-              Math.sin(i * 0.2 + time * 0.8)
-            : 0;
+          const inZone = (angle - zoneStart) / (zoneEnd - zoneStart);
+          const smooth =
+            inZone <= 0
+              ? 0
+              : inZone >= 1
+                ? 0
+                : inZone < 0.5
+                  ? 4 * inZone * inZone * inZone
+                  : 1 - Math.pow(-2 * inZone + 2, 3) / 2;
+
+          const wave =
+            Math.sin(angle * 5 + time * 1.8) *
+            (6 + i * 0.22) *
+            smooth *
+            Math.sin(i * 0.18 + time * 0.6);
+
+          const groove = Math.sin(angle * 40 + i * 0.3) * 0.4;
           const r = baseRadius + groove + wave;
           const x = cx + Math.cos(angle) * r;
           const y = cy + Math.sin(angle) * r;
