@@ -18,6 +18,30 @@ export type OscilloscopeTextProps = {
   overlayZIndex?: number;
 };
 
+function nearestNeighbor(pts: { x: number; y: number }[]): { x: number; y: number }[] {
+  if (pts.length === 0) return [];
+  const result: { x: number; y: number }[] = [];
+  const remaining = [...pts];
+  let current = remaining.splice(0, 1)[0]!;
+  result.push(current);
+  while (remaining.length > 0) {
+    let minDist = Infinity;
+    let minIdx = 0;
+    for (let i = 0; i < remaining.length; i++) {
+      const dx = remaining[i].x - current.x;
+      const dy = remaining[i].y - current.y;
+      const d = dx * dx + dy * dy;
+      if (d < minDist) {
+        minDist = d;
+        minIdx = i;
+      }
+    }
+    current = remaining.splice(minIdx, 1)[0]!;
+    result.push(current);
+  }
+  return result;
+}
+
 async function buildStrokePoints(
   w: number,
   h: number,
@@ -61,7 +85,7 @@ async function buildStrokePoints(
     octx.fillText("Traduzco intenciones.", w / 2, h / 2 + 50);
 
     const { data } = octx.getImageData(0, 0, w, h);
-    const gap = 3;
+    const gap = 6;
     const midY = h / 2;
     const line1: { x: number; y: number }[] = [];
     const line2: { x: number; y: number }[] = [];
@@ -76,9 +100,9 @@ async function buildStrokePoints(
       }
     }
 
-    line1.sort((a, b) => (a.y !== b.y ? a.y - b.y : a.x - b.x));
-    line2.sort((a, b) => (a.y !== b.y ? a.y - b.y : a.x - b.x));
-    pointsFound = [...line1, ...line2];
+    const ordered1 = nearestNeighbor(line1);
+    const ordered2 = nearestNeighbor(line2);
+    pointsFound = [...ordered1, ...ordered2];
 
     if (pointsFound.length > 50) break;
   }
