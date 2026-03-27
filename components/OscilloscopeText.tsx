@@ -2,15 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const DRAW_MS = 3000;
-const FADE_START_MS = 7000;
-const COMPLETE_MS = 8000;
+const FONT_LOAD = '200 72px "DM Sans"';
+const REVEAL_MS = 2500;
+const HOLD_END_MS = 5000;
+const COMPLETE_MS = 6000;
 
-const FONT_SPEC = '200 72px "DM Sans"';
-
-const TRAIL_DRAW = "rgba(2, 2, 2, 0.04)";
-const TRAIL_HOLD = "rgba(2, 2, 2, 0.008)";
-const TRAIL_FINAL = "rgba(2, 2, 2, 0.14)";
+function easeInOutCubic(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
 
 export type OscilloscopeTextProps = {
   onComplete?: () => void;
@@ -18,98 +17,24 @@ export type OscilloscopeTextProps = {
   overlayZIndex?: number;
 };
 
-function nearestNeighbor(pts: { x: number; y: number }[]): { x: number; y: number }[] {
-  if (pts.length === 0) return [];
-  const result: { x: number; y: number }[] = [];
-  const remaining = [...pts];
-  let current = remaining.splice(0, 1)[0]!;
-  result.push(current);
-  while (remaining.length > 0) {
-    let minDist = Infinity;
-    let minIdx = 0;
-    for (let i = 0; i < remaining.length; i++) {
-      const dx = remaining[i].x - current.x;
-      const dy = remaining[i].y - current.y;
-      const d = dx * dx + dy * dy;
-      if (d < minDist) {
-        minDist = d;
-        minIdx = i;
-      }
-    }
-    current = remaining.splice(minIdx, 1)[0]!;
-    result.push(current);
-  }
-  return result;
-}
+function drawGlowingText(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  ctx.font = '200 72px "DM Sans"';
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
 
-async function buildStrokePoints(
-  w: number,
-  h: number,
-): Promise<{ x: number; y: number }[]> {
-  await document.fonts.ready;
+  ctx.fillStyle = "#00e5ff";
+  ctx.shadowBlur = 18;
+  ctx.shadowColor = "#00aaff";
+  ctx.fillText("No capturo sonido.", w / 2, h / 2 - 50);
+  ctx.fillText("Traduzco intenciones.", w / 2, h / 2 + 50);
 
-  try {
-    await Promise.all([
-      document.fonts.load(FONT_SPEC),
-      document.fonts.load('300 72px "DM Sans"'),
-      document.fonts.load('400 72px "DM Sans"'),
-    ]);
-  } catch {
-    /* ignore */
-  }
+  ctx.shadowBlur = 8;
+  ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+  ctx.fillText("No capturo sonido.", w / 2, h / 2 - 50);
+  ctx.fillText("Traduzco intenciones.", w / 2, h / 2 + 50);
 
-  await new Promise((r) => setTimeout(r, 100));
-
-  const off = document.createElement("canvas");
-  off.width = w;
-  off.height = h;
-  const octx = off.getContext("2d", { willReadFrequently: true });
-  if (!octx) return [];
-
-  const fonts = [
-    FONT_SPEC,
-    '300 72px "DM Sans"',
-    '72px "Helvetica Neue"',
-    "72px Arial",
-  ];
-
-  let pointsFound: { x: number; y: number }[] = [];
-
-  for (const fontSpec of fonts) {
-    octx.clearRect(0, 0, w, h);
-    octx.font = fontSpec;
-    octx.fillStyle = "white";
-    octx.textAlign = "center";
-    octx.textBaseline = "middle";
-    octx.fillText("No capturo sonido.", w / 2, h / 2 - 50);
-    octx.fillText("Traduzco intenciones.", w / 2, h / 2 + 50);
-
-    const { data } = octx.getImageData(0, 0, w, h);
-    const gap = 6;
-    const midY = h / 2;
-    const line1: { x: number; y: number }[] = [];
-    const line2: { x: number; y: number }[] = [];
-
-    for (let y = 0; y < h; y += gap) {
-      for (let x = 0; x < w; x += gap) {
-        const i = (y * w + x) * 4;
-        if (data[i + 3] > 128) {
-          if (y < midY) line1.push({ x, y });
-          else line2.push({ x, y });
-        }
-      }
-    }
-
-    const ordered1 = nearestNeighbor(line1);
-    const ordered2 = nearestNeighbor(line2);
-    pointsFound = [...ordered1, ...ordered2];
-
-    if (pointsFound.length > 50) break;
-  }
-
-  console.log("[OscilloscopeText] points found:", pointsFound.length);
-
-  return pointsFound;
+  ctx.shadowBlur = 0;
+  ctx.shadowColor = "transparent";
 }
 
 export default function OscilloscopeText({
@@ -159,74 +84,68 @@ export default function OscilloscopeText({
     let completeFired = false;
 
     void (async () => {
-      const points = await buildStrokePoints(w, h);
-      if (!running) return;
-      if (points.length < 2) {
-        onCompleteRef.current?.();
-        return;
+      await document.fonts.ready;
+      try {
+        await document.fonts.load(FONT_LOAD);
+      } catch {
+        /* ignore */
       }
+
+      if (!running) return;
 
       const t0 = performance.now();
 
       const tick = () => {
         if (!running) return;
-        rafId = requestAnimationFrame(tick);
-
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
         const elapsed = performance.now() - t0;
 
-        if (elapsed < DRAW_MS) {
-          ctx.fillStyle = TRAIL_DRAW;
-        } else if (elapsed < FADE_START_MS) {
-          ctx.fillStyle = TRAIL_HOLD;
-        } else {
-          ctx.fillStyle = TRAIL_FINAL;
-        }
-        ctx.fillRect(0, 0, w, h);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, w, h);
 
-        const n = points.length;
-        const drawEnd =
-          elapsed < DRAW_MS
-            ? Math.max(
-                1,
-                Math.min(n, Math.ceil((elapsed / DRAW_MS) * (n - 1)) + 1),
-              )
-            : n;
-
-        if (drawEnd >= 2) {
-          ctx.beginPath();
-          ctx.moveTo(points[0].x, points[0].y);
-          for (let i = 1; i < drawEnd; i++) {
-            ctx.lineTo(points[i].x, points[i].y);
+        if (elapsed >= COMPLETE_MS) {
+          if (!completeFired) {
+            completeFired = true;
+            onCompleteRef.current?.();
           }
-          ctx.strokeStyle = "#00e5ff";
-          ctx.lineWidth = 1.5;
-          ctx.lineCap = "round";
-          ctx.lineJoin = "round";
-          ctx.shadowBlur = 12;
-          ctx.shadowColor = "#00aaff";
-          ctx.stroke();
-          ctx.shadowBlur = 0;
-          ctx.shadowColor = "transparent";
+          return;
         }
 
-        if (elapsed < DRAW_MS && drawEnd >= 1) {
-          const tip = points[Math.min(drawEnd - 1, n - 1)];
+        if (elapsed >= HOLD_END_MS) {
+          const fadeProgress = (elapsed - HOLD_END_MS) / 1000;
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, 1 - fadeProgress);
+          drawGlowingText(ctx, w, h);
+          ctx.restore();
+          ctx.globalAlpha = 1;
+          rafId = requestAnimationFrame(tick);
+          return;
+        }
+
+        const revealT = Math.min(1, elapsed / REVEAL_MS);
+        const progress =
+          elapsed < REVEAL_MS ? easeInOutCubic(revealT) : 1;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, 0, w * progress, h);
+        ctx.clip();
+        drawGlowingText(ctx, w, h);
+        ctx.restore();
+
+        if (progress > 0 && progress < 1) {
+          const tipX = w * progress;
           ctx.beginPath();
-          ctx.arc(tip.x, tip.y, 2.5, 0, Math.PI * 2);
+          ctx.arc(tipX, h / 2, 3, 0, Math.PI * 2);
           ctx.fillStyle = "#ffffff";
-          ctx.shadowBlur = 24;
+          ctx.shadowBlur = 20;
           ctx.shadowColor = "#00aaff";
           ctx.fill();
           ctx.shadowBlur = 0;
           ctx.shadowColor = "transparent";
         }
 
-        if (elapsed >= COMPLETE_MS && !completeFired) {
-          completeFired = true;
-          onCompleteRef.current?.();
-        }
+        rafId = requestAnimationFrame(tick);
       };
 
       rafId = requestAnimationFrame(tick);
@@ -258,8 +177,8 @@ export default function OscilloscopeText({
       <canvas
         ref={canvasRef}
         style={{
-          position: "relative",
           display: "block",
+          margin: "0 auto",
           backgroundColor: "transparent",
         }}
         aria-hidden
