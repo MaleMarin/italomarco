@@ -47,10 +47,10 @@ export function CinematicLoader() {
     };
 
     const lerpColor = (t: number) => {
-      const r = Math.round(130 + (200 - 130) * t);
-      const g = 255;
-      const b = Math.round(140 + (60 - 140) * t);
-      return `rgba(${r},${g},${b},0.82)`;
+      const r = Math.round(0 + (0 - 0) * t);
+      const g = Math.round(180 + (120 - 180) * t);
+      const b = Math.round(255 + (255 - 255) * t);
+      return `rgba(${r},${g},${b},0.85)`;
     };
 
     const drawDisk = (t: number, rot: number) => {
@@ -84,7 +84,7 @@ export function CinematicLoader() {
         ctx.strokeStyle = color;
         ctx.lineWidth = frac < 0.3 ? 0.6 : 0.75;
         ctx.shadowBlur = frac > 0.5 ? 3 : 1;
-        ctx.shadowColor = color;
+        ctx.shadowColor = "#00aaff";
         ctx.stroke();
         ctx.shadowBlur = 0;
       }
@@ -149,7 +149,8 @@ export function CinematicLoader() {
 
     rafRef.current = requestAnimationFrame(draw);
 
-    const timer = window.setTimeout(() => setVisible(false), 2000);
+    /* Visible más tiempo antes del fade de salida (0.5s en motion.div) */
+    const timer = window.setTimeout(() => setVisible(false), 4200);
 
     return () => {
       cancelAnimationFrame(rafRef.current);
