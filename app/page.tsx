@@ -82,13 +82,44 @@ export default function Home() {
       }}
     >
       <VinylMorph onComplete={() => setSiteVisible(true)} />
+      {siteVisible && (
+        <motion.div
+          initial={{ scaleX: 0, opacity: 1 }}
+          animate={{ scaleX: 1, opacity: 0 }}
+          transition={{
+            scaleX: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
+            opacity: { duration: 0.4, delay: 0.5 },
+          }}
+          style={{
+            position: "fixed",
+            top: "50%",
+            left: 0,
+            right: 0,
+            height: "1px",
+            backgroundColor: "rgba(255,255,255,0.6)",
+            transformOrigin: "center",
+            zIndex: 15,
+            pointerEvents: "none",
+          }}
+        />
+      )}
       <motion.div
         initial={false}
-        animate={{ opacity: siteVisible ? 1 : 0 }}
-        transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-        style={{
-          pointerEvents: siteVisible ? "auto" : "none",
+        animate={{
+          opacity: siteVisible ? 1 : 0,
+          clipPath: siteVisible
+            ? "inset(0% 0% 0% 0%)"
+            : "inset(50% 0% 50% 0%)",
         }}
+        transition={{
+          opacity: { duration: 0.1 },
+          clipPath: {
+            duration: 1.4,
+            ease: [0.16, 1, 0.3, 1],
+            delay: 0.1,
+          },
+        }}
+        style={{ pointerEvents: siteVisible ? "auto" : "none" }}
         className="w-full"
       >
         <motion.div
