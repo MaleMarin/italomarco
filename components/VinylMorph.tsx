@@ -3,11 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const T_DISK = 2200;
-const T_MORPH = 2600;
+const T_DISK = 2400;
+const T_MORPH = 2800;
 const T_HOLD = 3500;
 const T_FADE = 1000;
-const N = 800;
+const N = 500;
 
 export type VinylMorphProps = { onComplete?: () => void };
 
@@ -27,11 +27,11 @@ async function sampleTextPositions(W: number, H: number, count: number) {
     await new Promise((r) => setTimeout(r, 200));
 
     const candidates = [
-      `200 60px "DM Sans"`,
-      `300 60px "DM Sans"`,
-      `60px "Helvetica Neue"`,
-      `60px Arial`,
-      `60px sans-serif`,
+      `200 64px "DM Sans"`,
+      `300 64px "DM Sans"`,
+      `64px "Helvetica Neue"`,
+      `64px Arial`,
+      `64px sans-serif`,
     ];
 
     for (const spec of candidates) {
@@ -40,31 +40,31 @@ async function sampleTextPositions(W: number, H: number, count: number) {
       oc.fillStyle = "#ffffff";
       oc.textAlign = "center";
       oc.textBaseline = "middle";
-      oc.fillText("No capturo sonido.", W / 2, H / 2 - 80);
-      oc.fillText("Traduzco intenciones.", W / 2, H / 2 + 10);
+      oc.fillText("No capturo sonido.", W / 2, H / 2 - 52);
+      oc.fillText("Traduzco intenciones.", W / 2, H / 2 + 52);
 
       const { data } = oc.getImageData(0, 0, W, H);
       const pts: { x: number; y: number }[] = [];
-      const gap = Math.max(2, Math.round(Math.sqrt((W * H) / (count * 4))));
+      const gap = Math.max(4, Math.round(Math.sqrt((W * H) / (count * 2))));
 
       for (let y = 0; y < H; y += gap)
         for (let x = 0; x < W; x += gap)
           if (data[(y * W + x) * 4 + 3] > 120) pts.push({ x, y });
 
       if (pts.length > best.length) best = pts;
-      if (best.length >= 300) break;
+      if (best.length >= 200) break;
     }
   } finally {
     off.remove();
   }
 
-  if (best.length < 50) {
+  if (best.length < 30) {
     const pts: { x: number; y: number }[] = [];
-    [H / 2 - 50, H / 2 + 50].forEach((rowY) => {
+    [H / 2 - 52, H / 2 + 52].forEach((rowY) => {
       for (let i = 0; i < count / 2; i++)
         pts.push({
           x: W * 0.1 + Math.random() * W * 0.8,
-          y: rowY + (Math.random() - 0.5) * 40,
+          y: rowY + (Math.random() - 0.5) * 35,
         });
     });
     return pts;
@@ -79,6 +79,7 @@ async function sampleTextPositions(W: number, H: number, count: number) {
 
 export default function VinylMorph({ onComplete }: VinylMorphProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const nameElRef = useRef<HTMLDivElement>(null);
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
   const [visible, setVisible] = useState(true);
@@ -109,6 +110,11 @@ export default function VinylMorph({ onComplete }: VinylMorphProps) {
       t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
+    const applyNameOpacity = (a: number) => {
+      const el = nameElRef.current;
+      if (el) el.style.opacity = String(Math.max(0, Math.min(1, a)));
+    };
+
     const distort = (angle: number, i: number, t: number) => {
       const zS = -Math.PI * 0.25;
       const zE = Math.PI * 0.58;
@@ -127,9 +133,20 @@ export default function VinylMorph({ onComplete }: VinylMorphProps) {
     const drawDisk = (t: number, rot: number, alpha: number) => {
       ctx.save();
       ctx.globalAlpha = alpha;
+
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, SIZE * 0.55);
+      grad.addColorStop(0, "rgba(0,40,180,0.18)");
+      grad.addColorStop(0.6, "rgba(0,20,100,0.08)");
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, SIZE * 0.55, 0, Math.PI * 2);
+      ctx.fill();
+
       ctx.translate(cx, cy);
       ctx.rotate(rot);
       ctx.translate(-cx, -cy);
+
       for (let i = 0; i < RINGS; i++) {
         const frac = i / (RINGS - 1);
         const baseR = MIN_R + (MAX_R - MIN_R) * frac;
@@ -202,19 +219,6 @@ export default function VinylMorph({ onComplete }: VinylMorphProps) {
       ctx.restore();
     };
 
-    const drawName = (alpha: number) => {
-      if (alpha <= 0) return;
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.font = '200 13px "DM Sans", "Helvetica Neue", Arial, sans-serif';
-      ctx.fillStyle = "rgba(180,210,255,0.75)";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "top";
-      ctx.letterSpacing = "0.35em";
-      ctx.fillText("ITALO MARCO", cx, cy + SIZE * 0.62 + 32);
-      ctx.restore();
-    };
-
     const getDiskPts = (t: number, rot: number, count: number) => {
       const pts: { x: number; y: number }[] = [];
       const perRing = Math.ceil(count / RINGS);
@@ -275,12 +279,12 @@ export default function VinylMorph({ onComplete }: VinylMorphProps) {
       if (el < T_DISK) {
         drawDisk(time_, rot_, 1);
         drawNeedle(1);
-        drawName(Math.min(1, el / 800));
+        applyNameOpacity(Math.min(1, el / 900));
       } else if (el < T_DISK + T_MORPH) {
         const mp = ease(Math.min(1, (el - T_DISK) / T_MORPH));
         drawDisk(time_, rot_, Math.max(0, 1 - mp * 2));
         drawNeedle(Math.max(0, 1 - mp * 4));
-        drawName(Math.max(0, 1 - mp * 2));
+        applyNameOpacity(Math.max(0, 1 - mp * 3));
 
         if (ready) {
           particles.forEach((p) => {
@@ -301,6 +305,7 @@ export default function VinylMorph({ onComplete }: VinylMorphProps) {
           });
         }
       } else if (el < T_DISK + T_MORPH + T_HOLD) {
+        applyNameOpacity(0);
         particles.forEach((p) => {
           ctx.beginPath();
           ctx.arc(p.tx, p.ty, 3.5, 0, Math.PI * 2);
@@ -351,6 +356,26 @@ export default function VinylMorph({ onComplete }: VinylMorphProps) {
           }}
         >
           <canvas ref={canvasRef} style={{ display: "block" }} />
+          <div
+            ref={nameElRef}
+            style={{
+              position: "absolute",
+              top: "calc(50% + 260px)",
+              left: 0,
+              right: 0,
+              textAlign: "center",
+              fontFamily: '"DM Sans", "Helvetica Neue", Arial, sans-serif',
+              fontWeight: 200,
+              fontSize: "13px",
+              letterSpacing: "0.35em",
+              color: "rgba(255,255,255,0.9)",
+              textTransform: "uppercase",
+              opacity: 0,
+              pointerEvents: "none",
+            }}
+          >
+            Italo Marco
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
