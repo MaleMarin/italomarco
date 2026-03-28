@@ -22,15 +22,25 @@ export default function Credits() {
     <section
       ref={ref}
       aria-label="Créditos"
-      className="relative z-10 flex min-h-screen flex-col items-center justify-center px-5"
-      style={{ fontFamily: 'var(--font-sans), "DM Sans", sans-serif' }}
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "48px",
+        padding: "10vh 5vw",
+        position: "relative",
+        zIndex: 10,
+        fontFamily: 'var(--font-sans), "DM Sans", sans-serif',
+      }}
     >
       <h2
-        className="mb-12 text-center uppercase"
+        className="m-0 text-center uppercase"
         style={{
           fontSize: "11px",
           letterSpacing: "0.3em",
-          color: "rgba(255,255,255,0.3)",
+          color: "rgba(255,255,255,0.5)",
           fontWeight: 200,
         }}
       >
@@ -48,23 +58,23 @@ export default function Credits() {
               justifyContent: "space-between",
               width: "min(600px, 90vw)",
               paddingBottom: 16,
-              borderBottom: "0.5px solid rgba(255,255,255,0.08)",
+              borderBottom: "0.5px solid rgba(255,255,255,0.12)",
             }}
           >
             <span
               style={{
                 fontSize: 18,
                 fontWeight: 200,
-                color: "rgba(255,255,255,0.85)",
+                color: "rgba(255,255,255,0.7)",
               }}
             >
               {row.artist}
             </span>
             <span
               style={{
-                fontSize: 11,
+                fontSize: "11px",
                 fontWeight: 200,
-                color: "rgba(255,255,255,0.3)",
+                color: "rgba(255,255,255,0.35)",
                 letterSpacing: "0.15em",
                 textTransform: "uppercase",
                 alignSelf: "flex-end",
