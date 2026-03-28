@@ -40,8 +40,8 @@ async function sampleTextPositions(W: number, H: number, count: number) {
       oc.fillStyle = "#ffffff";
       oc.textAlign = "center";
       oc.textBaseline = "middle";
-      oc.fillText("No capturo sonido.", W / 2, H / 2 - 52);
-      oc.fillText("Traduzco intenciones.", W / 2, H / 2 + 52);
+      oc.fillText("No capturo sonido.", W / 2, H * 0.72);
+      oc.fillText("Traduzco intenciones.", W / 2, H * 0.82);
 
       const { data } = oc.getImageData(0, 0, W, H);
       const pts: { x: number; y: number }[] = [];
