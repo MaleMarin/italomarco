@@ -1,6 +1,13 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
+import { useHeaderIntro } from "@/components/Providers";
+
+const VinylMorph = dynamic(
+  () => import("@/components/VinylMorph"),
+  { ssr: false },
+);
 import {
   motion,
   useMotionValue,
@@ -19,6 +26,15 @@ const springLight = { stiffness: 38, damping: 32, mass: 1.1 };
 
 export default function Home() {
   const [siteVisible, setSiteVisible] = useState(false);
+  const { setHomeIntroComplete } = useHeaderIntro();
+
+  useEffect(() => {
+    setHomeIntroComplete(false);
+  }, [setHomeIntroComplete]);
+
+  useEffect(() => {
+    if (siteVisible) setHomeIntroComplete(true);
+  }, [siteVisible, setHomeIntroComplete]);
   const reduce = useReducedMotion();
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -55,65 +71,6 @@ export default function Home() {
     el.style.setProperty("--mouse-y", "38%");
   }, []);
 
-  useEffect(() => {
-    const words = [
-      ["No", "capturo", "sonido."],
-      ["Traduzco", "intenciones."],
-    ];
-    const overlay = document.createElement("div");
-    overlay.style.cssText =
-      "position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:25;pointer-events:none;gap:0.4em;transition:opacity 1s ease;";
-    const allSpans: HTMLSpanElement[] = [];
-    words.forEach((line) => {
-      const row = document.createElement("div");
-      row.style.cssText = "display:flex;gap:0.4em;";
-      line.forEach((word) => {
-        const span = document.createElement("span");
-        span.textContent = word;
-        span.style.cssText =
-          "font-family:DM Sans,sans-serif;font-weight:200;font-size:clamp(28px,5vw,68px);opacity:0;filter:blur(18px);transform:translateY(14px);color:#a8ff3e;text-shadow:0 0 32px rgba(168,255,62,1);transition:opacity 1s,filter 1s,transform 1s,color 1.5s ease-out,text-shadow 1.8s ease-out;display:inline-block;white-space:nowrap;";
-        row.appendChild(span);
-        allSpans.push(span);
-      });
-      overlay.appendChild(row);
-    });
-    document.body.appendChild(overlay);
-
-    const timers: ReturnType<typeof setTimeout>[] = [];
-
-    const start = setTimeout(() => {
-      allSpans.forEach((span, i) => {
-        timers.push(
-          setTimeout(() => {
-            span.style.opacity = "1";
-            span.style.filter = "blur(0px)";
-            span.style.transform = "translateY(0px)";
-            span.style.color = "rgba(255,255,255,0.93)";
-            span.style.textShadow = "none";
-          }, i * 680),
-        );
-      });
-      const totalReveal = (allSpans.length - 1) * 680 + 1000;
-      timers.push(
-        setTimeout(() => {
-          overlay.style.opacity = "0";
-        }, totalReveal + 4000),
-      );
-      timers.push(
-        setTimeout(() => {
-          overlay.remove();
-          setSiteVisible(true);
-        }, totalReveal + 5000),
-      );
-    }, 2300);
-
-    timers.push(start);
-    return () => {
-      timers.forEach(clearTimeout);
-      overlay.remove();
-    };
-  }, []);
-
   return (
     <div
       ref={rootRef}
@@ -124,6 +81,7 @@ export default function Home() {
         color: "#F9F9F9",
       }}
     >
+      <VinylMorph onComplete={() => setSiteVisible(true)} />
       <motion.div
         initial={false}
         animate={{ opacity: siteVisible ? 1 : 0 }}
