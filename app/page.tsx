@@ -26,6 +26,7 @@ const springLight = { stiffness: 38, damping: 32, mass: 1.1 };
 
 export default function Home() {
   const [siteVisible, setSiteVisible] = useState(false);
+  const [showLine, setShowLine] = useState(false);
   const { setHomeIntroComplete } = useHeaderIntro();
 
   useEffect(() => {
@@ -81,8 +82,13 @@ export default function Home() {
         color: "#F9F9F9",
       }}
     >
-      <VinylMorph onComplete={() => setSiteVisible(true)} />
-      {siteVisible && (
+      <VinylMorph
+        onComplete={() => {
+          setShowLine(true);
+          setTimeout(() => setSiteVisible(true), 700);
+        }}
+      />
+      {showLine && (
         <motion.div
           initial={{ scaleX: 0, opacity: 1 }}
           animate={{ scaleX: 1, opacity: 0 }}
