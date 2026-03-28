@@ -4,18 +4,84 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const T_DISK = 2200;
-const T_MORPH = 2800;
-const T_HOLD = 3200;
+const T_MORPH = 2600;
+const T_HOLD = 3500;
 const T_FADE = 1000;
-const N = 600;
+const N = 800;
 
 export type VinylMorphProps = { onComplete?: () => void };
 
+async function sampleTextPositions(W: number, H: number, count: number) {
+  const off = document.createElement("canvas");
+  off.width = W;
+  off.height = H;
+  off.style.cssText =
+    "position:fixed;top:-9999px;left:-9999px;opacity:0;pointer-events:none;";
+  document.body.appendChild(off);
+  const oc = off.getContext("2d", { willReadFrequently: true })!;
+
+  let best: { x: number; y: number }[] = [];
+
+  try {
+    await document.fonts.ready;
+    await new Promise((r) => setTimeout(r, 200));
+
+    const candidates = [
+      `200 60px "DM Sans"`,
+      `300 60px "DM Sans"`,
+      `60px "Helvetica Neue"`,
+      `60px Arial`,
+      `60px sans-serif`,
+    ];
+
+    for (const spec of candidates) {
+      oc.clearRect(0, 0, W, H);
+      oc.font = spec;
+      oc.fillStyle = "#ffffff";
+      oc.textAlign = "center";
+      oc.textBaseline = "middle";
+      oc.fillText("No capturo sonido.", W / 2, H / 2 - 80);
+      oc.fillText("Traduzco intenciones.", W / 2, H / 2 + 10);
+
+      const { data } = oc.getImageData(0, 0, W, H);
+      const pts: { x: number; y: number }[] = [];
+      const gap = Math.max(2, Math.round(Math.sqrt((W * H) / (count * 4))));
+
+      for (let y = 0; y < H; y += gap)
+        for (let x = 0; x < W; x += gap)
+          if (data[(y * W + x) * 4 + 3] > 120) pts.push({ x, y });
+
+      if (pts.length > best.length) best = pts;
+      if (best.length >= 300) break;
+    }
+  } finally {
+    off.remove();
+  }
+
+  if (best.length < 50) {
+    const pts: { x: number; y: number }[] = [];
+    [H / 2 - 50, H / 2 + 50].forEach((rowY) => {
+      for (let i = 0; i < count / 2; i++)
+        pts.push({
+          x: W * 0.1 + Math.random() * W * 0.8,
+          y: rowY + (Math.random() - 0.5) * 40,
+        });
+    });
+    return pts;
+  }
+
+  for (let i = best.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [best[i], best[j]] = [best[j], best[i]];
+  }
+  return best.slice(0, count);
+}
+
 export default function VinylMorph({ onComplete }: VinylMorphProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [visible, setVisible] = useState(true);
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
+  const [visible, setVisible] = useState(true);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -39,10 +105,9 @@ export default function VinylMorph({ onComplete }: VinylMorphProps) {
     const MIN_R = SIZE * 0.06;
     const MAX_R = SIZE * 0.46;
 
-    const easeInOut = (t: number) =>
+    const ease = (t: number) =>
       t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-
-    const lerpN = (a: number, b: number, t: number) => a + (b - a) * t;
+    const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
     const distort = (angle: number, i: number, t: number) => {
       const zS = -Math.PI * 0.25;
@@ -137,6 +202,19 @@ export default function VinylMorph({ onComplete }: VinylMorphProps) {
       ctx.restore();
     };
 
+    const drawName = (alpha: number) => {
+      if (alpha <= 0) return;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.font = '200 13px "DM Sans", "Helvetica Neue", Arial, sans-serif';
+      ctx.fillStyle = "rgba(180,210,255,0.75)";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.letterSpacing = "0.35em";
+      ctx.fillText("ITALO MARCO", cx, cy + SIZE * 0.62 + 32);
+      ctx.restore();
+    };
+
     const getDiskPts = (t: number, rot: number, count: number) => {
       const pts: { x: number; y: number }[] = [];
       const perRing = Math.ceil(count / RINGS);
@@ -155,103 +233,6 @@ export default function VinylMorph({ onComplete }: VinylMorphProps) {
       return pts;
     };
 
-    const collectPtsFromRaster = (data: Uint8ClampedArray, gap: number) => {
-      const pts: { x: number; y: number }[] = [];
-      for (let y = 0; y < H; y += gap)
-        for (let x = 0; x < W; x += gap)
-          if (data[(y * W + x) * 4 + 3] > 100) pts.push({ x, y });
-      return pts;
-    };
-
-    const getTextPts = async (count: number) => {
-      try {
-        await document.fonts.ready;
-      } catch {
-        /* ignore */
-      }
-
-      const gap = Math.max(2, Math.floor(Math.sqrt((W * H) / count / 3)));
-
-      /* Misma lógica que el snippet de consola: DM Sans 200, ~60px, H/2 ± 45 (escala en pantallas chicas) */
-      const fsProbe = Math.min(60, Math.max(42, Math.round(W * 0.058)));
-      const lineDy = Math.round(45 * (fsProbe / 60));
-      try {
-        await document.fonts.load(`200 ${fsProbe}px "DM Sans"`);
-      } catch {
-        /* ignore */
-      }
-
-      const tryRaster = (font: string, y1: number, y2: number) => {
-        const off = document.createElement("canvas");
-        off.width = W;
-        off.height = H;
-        const oc = off.getContext("2d", { willReadFrequently: true });
-        if (!oc) return null;
-        oc.clearRect(0, 0, W, H);
-        oc.font = font;
-        oc.fillStyle = "white";
-        oc.textAlign = "center";
-        oc.textBaseline = "middle";
-        oc.fillText("No capturo sonido.", W / 2, y1);
-        oc.fillText("Traduzco intenciones.", W / 2, y2);
-        const { data } = oc.getImageData(0, 0, W, H);
-        return collectPtsFromRaster(data, gap);
-      };
-
-      let pts =
-        tryRaster(
-          `200 ${fsProbe}px "DM Sans"`,
-          H / 2 - lineDy,
-          H / 2 + lineDy,
-        ) ?? [];
-
-      if (pts.length > 80) {
-        for (let i = pts.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [pts[i], pts[j]] = [pts[j], pts[i]];
-        }
-        return pts.slice(0, count);
-      }
-
-      const fs = Math.max(40, Math.min(W * 0.065, 72));
-      try {
-        await document.fonts.load(`200 ${fs}px "DM Sans"`);
-      } catch {
-        /* ignore */
-      }
-      await new Promise((r) => setTimeout(r, 120));
-
-      const fontStrings = [
-        `200 ${fs}px "DM Sans"`,
-        `300 ${fs}px "DM Sans"`,
-        `${fs}px "Helvetica Neue"`,
-        `${fs}px Arial`,
-      ];
-
-      for (const fontStr of fontStrings) {
-        const lineH = fs * 1.3;
-        const more =
-          tryRaster(fontStr, H / 2 - lineH * 0.5, H / 2 + lineH * 0.5) ?? [];
-        if (more.length > 80) {
-          pts = more;
-          for (let i = pts.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [pts[i], pts[j]] = [pts[j], pts[i]];
-          }
-          return pts.slice(0, count);
-        }
-      }
-
-      const fallback: { x: number; y: number }[] = [];
-      for (let i = 0; i < count; i++) {
-        fallback.push({
-          x: W * 0.15 + Math.random() * W * 0.7,
-          y: H * 0.4 + Math.random() * H * 0.2,
-        });
-      }
-      return fallback;
-    };
-
     type P = {
       sx: number;
       sy: number;
@@ -262,10 +243,9 @@ export default function VinylMorph({ onComplete }: VinylMorphProps) {
     };
     let particles: P[] = [];
     let ready = false;
-
     const diskSnap = getDiskPts(0, 0, N);
 
-    getTextPts(N).then((textPts) => {
+    sampleTextPositions(W, H, N).then((textPts) => {
       particles = diskSnap.map((dp, i) => {
         const tp = textPts[i % textPts.length];
         return {
@@ -295,22 +275,23 @@ export default function VinylMorph({ onComplete }: VinylMorphProps) {
       if (el < T_DISK) {
         drawDisk(time_, rot_, 1);
         drawNeedle(1);
+        drawName(Math.min(1, el / 800));
       } else if (el < T_DISK + T_MORPH) {
-        const mp = easeInOut(Math.min(1, (el - T_DISK) / T_MORPH));
+        const mp = ease(Math.min(1, (el - T_DISK) / T_MORPH));
         drawDisk(time_, rot_, Math.max(0, 1 - mp * 2));
         drawNeedle(Math.max(0, 1 - mp * 4));
+        drawName(Math.max(0, 1 - mp * 2));
 
         if (ready) {
           particles.forEach((p) => {
-            p.px = lerpN(p.sx, p.tx, mp);
-            p.py = lerpN(p.sy, p.ty, mp);
-            const r = Math.round(lerpN(0, 255, mp));
-            const g = Math.round(lerpN(80, 255, mp));
-            const b = 255;
-            const a = lerpN(0.55, 0.94, mp);
+            p.px = lerp(p.sx, p.tx, mp);
+            p.py = lerp(p.sy, p.ty, mp);
+            const r = Math.round(lerp(0, 255, mp));
+            const g = Math.round(lerp(80, 255, mp));
+            const a = lerp(0.6, 0.95, mp);
             ctx.beginPath();
-            ctx.arc(p.px, p.py, lerpN(3, 2.5, mp), 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+            ctx.arc(p.px, p.py, lerp(4, 3.5, mp), 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${r},${g},255,${a})`;
             if (mp < 0.5) {
               ctx.shadowBlur = 5;
               ctx.shadowColor = "rgba(0,100,255,0.5)";
@@ -322,7 +303,7 @@ export default function VinylMorph({ onComplete }: VinylMorphProps) {
       } else if (el < T_DISK + T_MORPH + T_HOLD) {
         particles.forEach((p) => {
           ctx.beginPath();
-          ctx.arc(p.tx, p.ty, 2.5, 0, Math.PI * 2);
+          ctx.arc(p.tx, p.ty, 3.5, 0, Math.PI * 2);
           ctx.fillStyle = "rgba(255,255,255,0.93)";
           ctx.fill();
         });
@@ -331,7 +312,7 @@ export default function VinylMorph({ onComplete }: VinylMorphProps) {
         ctx.globalAlpha = Math.max(0, fa);
         particles.forEach((p) => {
           ctx.beginPath();
-          ctx.arc(p.tx, p.ty, 2.5, 0, Math.PI * 2);
+          ctx.arc(p.tx, p.ty, 3.5, 0, Math.PI * 2);
           ctx.fillStyle = "rgba(255,255,255,0.93)";
           ctx.fill();
         });
