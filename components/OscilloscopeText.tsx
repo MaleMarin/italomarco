@@ -1,12 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
-
-const WORDS = ["No", "capturo", "sonido.", "Traduzco", "intenciones."];
-const LOADER_DELAY  = 2300;
-const STAGGER       = 680;
-const WORD_DURATION = 1000;
-const HOLD_AFTER    = 4000;
-const FADE_OUT      = 1000;
+import { useEffect, useRef } from "react";
 
 export type OscilloscopeTextProps = {
   onComplete?: () => void;
@@ -16,61 +9,77 @@ export type OscilloscopeTextProps = {
 
 export default function OscilloscopeText({
   onComplete,
-  siteVisible = false,
   overlayZIndex = 20,
 }: OscilloscopeTextProps) {
-  // Which words have "landed" (transitioned to white)
-  const [landed, setLanded] = useState<boolean[]>(WORDS.map(() => false));
-  const [wrapperVisible, setWrapperVisible] = useState(false);
-  const [opacity, setOpacity] = useState(0);
-  const [fading, setFading] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (siteVisible) return;
+    const words = ["No", "capturo", "sonido.", "Traduzco", "intenciones."];
+    const line1 = ref.current?.querySelector("#line1");
+    const line2 = ref.current?.querySelector("#line2");
+    if (!line1 || !line2) return;
+
+    const spans = ref.current?.querySelectorAll("span");
+    if (!spans) return;
+
     const timers: ReturnType<typeof setTimeout>[] = [];
 
-    // Wait for loader to finish, then fade wrapper in
+    // After loader (2.3s), start revealing words
     const start = setTimeout(() => {
-      setWrapperVisible(true);
-      setOpacity(1);
-
-      // Land each word one by one
-      WORDS.forEach((_, i) => {
-        timers.push(
-          setTimeout(() => {
-            setLanded((prev) => {
-              const next = [...prev];
-              next[i] = true;
-              return next;
-            });
-          }, i * STAGGER)
-        );
+      spans.forEach((span, i) => {
+        timers.push(setTimeout(() => {
+          span.style.opacity = "1";
+          span.style.filter = "blur(0px)";
+          span.style.transform = "translateY(0px)";
+          span.style.color = "rgb(0, 58, 198)";
+          span.style.textShadow =
+            "0 0 20px rgba(0, 48, 165, 0.78), 0 0 40px rgba(0, 28, 115, 0.48)";
+        }, i * 680));
       });
 
-      const totalReveal = (WORDS.length - 1) * STAGGER + WORD_DURATION;
+      // Fade out after all words + hold
+      const totalReveal = (words.length - 1) * 680 + 1000;
+      timers.push(setTimeout(() => {
+        if (ref.current) ref.current.style.opacity = "0";
+      }, totalReveal + 4000));
 
-      // Fade out wrapper
-      timers.push(
-        setTimeout(() => setFading(true), totalReveal + HOLD_AFTER)
-      );
+      // onComplete
+      timers.push(setTimeout(() => {
+        onComplete?.();
+      }, totalReveal + 4000 + 1000));
 
-      // Call onComplete
-      timers.push(
-        setTimeout(() => onComplete?.(), totalReveal + HOLD_AFTER + FADE_OUT)
-      );
-    }, LOADER_DELAY);
+    }, 2300);
 
     timers.push(start);
     return () => timers.forEach(clearTimeout);
-  }, [onComplete, siteVisible]);
+  }, [onComplete]);
 
-  if (siteVisible || !wrapperVisible) return null;
-
-  const line1 = WORDS.slice(0, 3);
-  const line2 = WORDS.slice(3);
+  const wordStyle: React.CSSProperties = {
+    fontFamily: '"DM Sans", "Helvetica Neue", Arial, sans-serif',
+    fontWeight: 200,
+    fontSize: "clamp(28px, 5vw, 68px)",
+    letterSpacing: "-0.01em",
+    lineHeight: 1.1,
+    display: "inline-block",
+    whiteSpace: "nowrap",
+    // Start state
+    opacity: "0",
+    filter: "blur(18px)",
+    transform: "translateY(14px)",
+    color: "rgb(0, 32, 118)",
+    textShadow: "0 0 22px rgba(0, 28, 100, 0.4)",
+    transition: [
+      "opacity 1000ms cubic-bezier(0.16,1,0.3,1)",
+      "filter 1000ms cubic-bezier(0.16,1,0.3,1)",
+      "transform 1000ms cubic-bezier(0.16,1,0.3,1)",
+      "color 1500ms ease-out",
+      "text-shadow 1800ms ease-out",
+    ].join(", "),
+  };
 
   return (
     <div
+      ref={ref}
       style={{
         position: "fixed",
         inset: 0,
@@ -81,68 +90,19 @@ export default function OscilloscopeText({
         zIndex: overlayZIndex,
         pointerEvents: "none",
         gap: "0.4em",
-        // Wrapper fades in after loader, then fades out
-        opacity: fading ? 0 : opacity,
-        transition: fading
-          ? `opacity ${FADE_OUT}ms ease`
-          : "opacity 400ms ease",
+        transition: "opacity 1000ms ease",
       }}
     >
-      {[line1, line2].map((line, lineIdx) => (
-        <div
-          key={lineIdx}
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            gap: "0.4em",
-            alignItems: "baseline",
-          }}
-        >
-          {line.map((word, i) => {
-            const globalIdx = lineIdx === 0 ? i : i + 3;
-            const isLanded = landed[globalIdx];
-
-            return (
-              <span
-                key={globalIdx}
-                style={{
-                  fontFamily:
-                    '"DM Sans", "Helvetica Neue", Arial, sans-serif',
-                  fontWeight: 200,
-                  fontSize: "clamp(28px, 5vw, 68px)",
-                  letterSpacing: "-0.01em",
-                  lineHeight: 1.1,
-                  display: "inline-block",
-                  whiteSpace: "nowrap",
-                  // START state: green, blurred, invisible, shifted down
-                  // LANDED state: white, sharp, visible, in place
-                  opacity: isLanded ? 1 : 0,
-                  filter: isLanded ? "blur(0px)" : "blur(18px)",
-                  transform: isLanded
-                    ? "translateY(0px)"
-                    : "translateY(14px)",
-                  color: isLanded
-                    ? "rgba(255,255,255,0.93)"
-                    : "#a8ff3e",
-                  textShadow: isLanded
-                    ? "0 0 0px rgba(168,255,62,0)"
-                    : "0 0 32px rgba(168,255,62,1)",
-                  // CSS transitions fire because element is always in DOM
-                  transition: [
-                    `opacity ${WORD_DURATION}ms cubic-bezier(0.16,1,0.3,1)`,
-                    `filter ${WORD_DURATION}ms cubic-bezier(0.16,1,0.3,1)`,
-                    `transform ${WORD_DURATION}ms cubic-bezier(0.16,1,0.3,1)`,
-                    `color ${Math.round(WORD_DURATION * 1.5)}ms ease-out`,
-                    `text-shadow ${Math.round(WORD_DURATION * 1.8)}ms ease-out`,
-                  ].join(", "),
-                }}
-              >
-                {word}
-              </span>
-            );
-          })}
-        </div>
-      ))}
+      <div id="line1" style={{ display: "flex", gap: "0.4em" }}>
+        {["No", "capturo", "sonido."].map((w, i) => (
+          <span key={i} style={wordStyle}>{w}</span>
+        ))}
+      </div>
+      <div id="line2" style={{ display: "flex", gap: "0.4em" }}>
+        {["Traduzco", "intenciones."].map((w, i) => (
+          <span key={i} style={wordStyle}>{w}</span>
+        ))}
+      </div>
     </div>
   );
 }

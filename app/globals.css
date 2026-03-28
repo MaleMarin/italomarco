@@ -41,8 +41,9 @@
     pointer-events: none;
     opacity: 0.065;
     mix-blend-mode: soft-light;
-    background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
     background-repeat: repeat;
+    background-size: 200px 200px;
   }
 
   html.fluid-cursor-active body,
@@ -54,4 +55,23 @@
   html.fluid-cursor-active [data-fluid-cursor-off] * {
     cursor: auto !important;
   }
+}
+
+/* Frase: azul del vinilo. Fullscreen legacy z-index; embebida en HomeIntro sin capa aparte. */
+#phrase-overlay {
+  z-index: 5000 !important;
+  isolation: isolate !important;
+  mix-blend-mode: normal !important;
+}
+
+#phrase-overlay.phrase-overlay--embedded {
+  z-index: auto !important;
+}
+
+#phrase-overlay .phrase-line span {
+  color: rgb(0, 58, 198) !important;
+  -webkit-text-fill-color: rgb(0, 58, 198) !important;
+  text-shadow:
+    0 0 20px rgba(0, 48, 165, 0.78),
+    0 0 40px rgba(0, 28, 115, 0.48) !important;
 }

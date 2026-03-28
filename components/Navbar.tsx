@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
+import { usePathname } from "next/navigation";
 import { Layers, Menu, X } from "lucide-react";
-import { useLocale, type Locale } from "@/components/Providers";
+import { useLocale, useHeaderIntro, type Locale } from "@/components/Providers";
 import { useTranslations } from "@/lib/useTranslations";
 import { useCartStore, selectCartCount } from "@/lib/cart-store";
 import { cn } from "@/lib/cn";
@@ -40,6 +41,10 @@ function LangButton({
 }
 
 export function Navbar() {
+  const pathname = usePathname();
+  const { homeIntroComplete } = useHeaderIntro();
+  const showHeader = pathname !== "/" || homeIntroComplete;
+
   const { locale, setLocale } = useLocale();
   const t = useTranslations();
   const labels = t.nav;
@@ -52,14 +57,31 @@ export function Navbar() {
     "font-sans text-[10px] uppercase tracking-widest text-mercury/30 transition-colors hover:text-mercury/55";
 
   return (
-    <header className="sticky top-0 z-[210] border-b border-carve bg-void/72 shadow-[0_10px_40px_rgba(0,0,0,0.45)] backdrop-blur-lg backdrop-saturate-150">
+    <motion.header
+      initial={false}
+      animate={
+        reduce
+          ? { opacity: showHeader ? 1 : 0 }
+          : {
+              opacity: showHeader ? 1 : 0,
+              scale: showHeader ? 1 : 0.94,
+            }
+      }
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      style={{
+        transformOrigin: "50% 0%",
+        pointerEvents: showHeader ? "auto" : "none",
+      }}
+      aria-hidden={!showHeader}
+      className="sticky top-0 z-[210] border-b border-carve bg-void/72 shadow-[0_10px_40px_rgba(0,0,0,0.45)] backdrop-blur-lg backdrop-saturate-150"
+    >
       <nav
         className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6 md:h-16 md:px-8"
         aria-label="Primary"
       >
         <SpringLink
           href="/"
-          className="inline-flex font-sans text-[10px] font-medium uppercase tracking-widest text-mercury/45 transition-colors hover:text-mist/90 md:tracking-[0.35em]"
+          className="inline-flex font-sans text-[11px] font-medium uppercase tracking-widest text-mercury/45 transition-colors hover:text-mist/90 md:text-xs md:tracking-[0.35em]"
         >
           Ítalo Marco
         </SpringLink>
@@ -199,6 +221,6 @@ export function Navbar() {
           </ul>
         </div>
       ) : null}
-    </header>
+    </motion.header>
   );
 }

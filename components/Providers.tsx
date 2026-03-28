@@ -24,12 +24,32 @@ export function useLocale() {
   return ctx;
 }
 
+type HeaderIntroContextValue = {
+  homeIntroComplete: boolean;
+  setHomeIntroComplete: (v: boolean) => void;
+};
+
+const HeaderIntroContext = createContext<HeaderIntroContextValue | null>(null);
+
+export function useHeaderIntro() {
+  const ctx = useContext(HeaderIntroContext);
+  if (!ctx) {
+    throw new Error("useHeaderIntro must be used within Providers");
+  }
+  return ctx;
+}
+
 export function Providers({ children }: { children: ReactNode }) {
   const [locale, setLocale] = useState<Locale>("es");
+  const [homeIntroComplete, setHomeIntroComplete] = useState(false);
 
   return (
     <LocaleContext.Provider value={{ locale, setLocale }}>
-      {children}
+      <HeaderIntroContext.Provider
+        value={{ homeIntroComplete, setHomeIntroComplete }}
+      >
+        {children}
+      </HeaderIntroContext.Provider>
     </LocaleContext.Provider>
   );
 }

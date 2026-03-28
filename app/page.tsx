@@ -85,7 +85,7 @@ export default function Home() {
       <VinylMorph
         onComplete={() => {
           setShowLine(true);
-          setTimeout(() => setSiteVisible(true), 700);
+          setTimeout(() => setSiteVisible(true), 600);
         }}
       />
       {showLine && (
@@ -94,17 +94,18 @@ export default function Home() {
           animate={{ scaleX: 1, opacity: 0 }}
           transition={{
             scaleX: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
-            opacity: { duration: 0.4, delay: 0.5 },
+            /* Desaparece al acabar la expansión, a la vez que abre el clip vertical */
+            opacity: { duration: 0.35, delay: 0.6, ease: [0.22, 1, 0.36, 1] },
           }}
           style={{
             position: "fixed",
             top: "50%",
             left: 0,
             right: 0,
-            height: "1px",
-            backgroundColor: "rgba(255,255,255,0.6)",
+            height: "0.5px",
+            backgroundColor: "rgba(255,255,255,0.55)",
             transformOrigin: "center",
-            zIndex: 15,
+            zIndex: 10001,
             pointerEvents: "none",
           }}
         />
@@ -118,11 +119,13 @@ export default function Home() {
             : "inset(50% 0% 50% 0%)",
         }}
         transition={{
-          opacity: { duration: 0.1 },
+          opacity: {
+            duration: 1.15,
+            ease: [0.16, 1, 0.3, 1],
+          },
           clipPath: {
             duration: 1.4,
             ease: [0.16, 1, 0.3, 1],
-            delay: 0.1,
           },
         }}
         style={{ pointerEvents: siteVisible ? "auto" : "none" }}

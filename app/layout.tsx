@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
-import { DM_Sans, Playfair_Display, Roboto_Mono } from "next/font/google";
-import { CinematicLoader } from "@/components/CinematicLoader";
+import {
+  DM_Sans,
+  Inter,
+  Playfair_Display,
+  Plus_Jakarta_Sans,
+  Roboto_Mono,
+} from "next/font/google";
 import { Providers } from "@/components/Providers";
 import { FluidProvider } from "@/components/fluid/FluidProvider";
 import { DocumentLang } from "@/components/DocumentLang";
@@ -14,6 +19,20 @@ const sans = DM_Sans({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
+});
+
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-plus-jakarta",
+  display: "swap",
+  weight: ["400", "500", "600"],
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+  weight: ["200", "300", "400", "500"],
 });
 
 const playfair = Playfair_Display({
@@ -42,10 +61,9 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${sans.variable} ${playfair.variable} ${robotoMono.variable}`}
+      className={`${sans.variable} ${plusJakarta.variable} ${inter.variable} ${playfair.variable} ${robotoMono.variable}`}
     >
       <body className="m-0 min-h-[100dvh] bg-film-studio bg-fixed font-sans text-mist antialiased">
-        <CinematicLoader />
         <Providers>
           <FluidProvider>
             <Atmosphere>
@@ -59,65 +77,6 @@ export default function RootLayout({
             </Atmosphere>
           </FluidProvider>
         </Providers>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-  (function() {
-    var words = ["No", "capturo", "sonido.", "Traduzco", "intenciones."];
-    var line1 = ["No", "capturo", "sonido."];
-    var line2 = ["Traduzco", "intenciones."];
-    
-    function createOverlay() {
-      var overlay = document.createElement("div");
-      overlay.id = "phrase-overlay";
-      overlay.style.cssText = "position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:25;pointer-events:none;gap:0.4em;transition:opacity 1s ease;";
-      
-      [line1, line2].forEach(function(line) {
-        var row = document.createElement("div");
-        row.style.cssText = "display:flex;gap:0.4em;align-items:baseline;";
-        line.forEach(function(word) {
-          var span = document.createElement("span");
-          span.textContent = word;
-          span.style.cssText = "font-family:DM Sans,Helvetica Neue,Arial,sans-serif;font-weight:200;font-size:clamp(28px,5vw,68px);letter-spacing:-0.01em;line-height:1.1;display:inline-block;white-space:nowrap;opacity:0;filter:blur(18px);transform:translateY(14px);color:#a8ff3e;text-shadow:0 0 32px rgba(168,255,62,1);transition:opacity 1s cubic-bezier(0.16,1,0.3,1),filter 1s cubic-bezier(0.16,1,0.3,1),transform 1s cubic-bezier(0.16,1,0.3,1),color 1.5s ease-out,text-shadow 1.8s ease-out;";
-          row.appendChild(span);
-        });
-        overlay.appendChild(row);
-      });
-      
-      document.body.appendChild(overlay);
-      return overlay;
-    }
-    
-    // Wait for loader (2.3s) then start
-    setTimeout(function() {
-      var overlay = createOverlay();
-      var spans = overlay.querySelectorAll("span");
-      
-      spans.forEach(function(span, i) {
-        setTimeout(function() {
-          span.style.opacity = "1";
-          span.style.filter = "blur(0px)";
-          span.style.transform = "translateY(0px)";
-          span.style.color = "rgba(255,255,255,0.93)";
-          span.style.textShadow = "none";
-        }, i * 680);
-      });
-      
-      // Fade out after hold
-      setTimeout(function() {
-        overlay.style.opacity = "0";
-      }, (words.length - 1) * 680 + 1000 + 4000);
-      
-      // Remove overlay
-      setTimeout(function() {
-        overlay.remove();
-      }, (words.length - 1) * 680 + 1000 + 5000);
-      
-    }, 2300);
-  })();
-`,
-          }}
-        />
       </body>
     </html>
   );
