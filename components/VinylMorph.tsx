@@ -97,6 +97,9 @@ export default function VinylMorph({ onComplete }: VinylMorphProps) {
     canvas.height = H * dpr;
     canvas.style.width = `${W}px`;
     canvas.style.height = `${H}px`;
+    canvas.style.position = "absolute";
+    canvas.style.top = "0";
+    canvas.style.left = "0";
     ctx.scale(dpr, dpr);
 
     const cx = W / 2;
