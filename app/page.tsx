@@ -85,31 +85,28 @@ export default function Home() {
       <VinylMorph
         onComplete={() => {
           setShowLine(true);
-          setTimeout(() => setSiteVisible(true), 600);
+          setTimeout(() => {
+            setSiteVisible(true);
+            setTimeout(() => setShowLine(false), 1200);
+          }, 700);
         }}
       />
-      {showLine && (
-        <motion.div
-          initial={{ scaleX: 0, opacity: 1 }}
-          animate={{ scaleX: 1, opacity: 0 }}
-          transition={{
-            scaleX: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
-            /* Desaparece al acabar la expansión, a la vez que abre el clip vertical */
-            opacity: { duration: 0.35, delay: 0.6, ease: [0.22, 1, 0.36, 1] },
-          }}
-          style={{
-            position: "fixed",
-            top: "50%",
-            left: 0,
-            right: 0,
-            height: "0.5px",
-            backgroundColor: "rgba(255,255,255,0.55)",
-            transformOrigin: "center",
-            zIndex: 10001,
-            pointerEvents: "none",
-          }}
-        />
-      )}
+      <motion.div
+        initial={{ scaleX: 0 }}
+        animate={{ scaleX: showLine ? 1 : 0 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        style={{
+          position: "fixed",
+          top: "50%",
+          left: 0,
+          right: 0,
+          height: "1px",
+          background: "rgba(255,255,255,0.55)",
+          transformOrigin: "center center",
+          zIndex: 15,
+          pointerEvents: "none",
+        }}
+      />
       <motion.div
         initial={false}
         animate={{
@@ -119,13 +116,11 @@ export default function Home() {
             : "inset(50% 0% 50% 0%)",
         }}
         transition={{
-          opacity: {
-            duration: 1.15,
-            ease: [0.16, 1, 0.3, 1],
-          },
+          opacity: { duration: 0.01 },
           clipPath: {
             duration: 1.4,
             ease: [0.16, 1, 0.3, 1],
+            delay: 0.05,
           },
         }}
         style={{ pointerEvents: siteVisible ? "auto" : "none" }}
