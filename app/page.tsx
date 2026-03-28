@@ -3,6 +3,9 @@
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { useHeaderIntro } from "@/components/Providers";
+import WhatIBuild from "@/components/sections/WhatIBuild";
+import Credits from "@/components/sections/Credits";
+import Contact from "@/components/sections/Contact";
 
 const VinylMorph = dynamic(
   () => import("@/components/VinylMorph"),
@@ -173,6 +176,10 @@ export default function Home() {
           className="relative z-10 flex min-h-[min(45dvh,320px)] flex-1 flex-col justify-center px-5 pb-8 pt-10 md:px-10 md:pt-14"
           aria-hidden
         />
+
+        <WhatIBuild />
+        <Credits />
+        <Contact />
 
         <footer
           className="relative z-10 flex justify-center px-6 pb-10 pt-6 md:pb-12"
