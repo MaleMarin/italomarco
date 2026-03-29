@@ -13,7 +13,7 @@ const T_MORPH = 3000;
 const T_HOLD = 1600;
 const T_FADE = 1400;
 /** Máxima densidad de partículas sobre el trazo (coste: más arcos por frame). */
-const N = 38000;
+const N = 82000;
 
 const PHRASE_LINE1 = "No capturo sonido.";
 const PHRASE_LINE2 = "Traduzco intenciones.";
@@ -21,15 +21,14 @@ const PHRASE_LINE2 = "Traduzco intenciones.";
 /** Acento eléctrico #0052FF — mismo RGB en morph, hold y fade. */
 const LETTER_ACCENT = "0, 82, 255";
 
-/** Frase: Inter fina (UI moderna); fallbacks si el canvas no la resuelve. */
+/** Misma familia y peso que WhatIBuild (DM Sans 100); fallbacks si el raster falla. */
 const PHRASE_FONT_STACK =
-  'Inter, "Plus Jakarta Sans", system-ui, sans-serif';
-/** Peso ultralight en canvas; candidatos más gruesos si falla el raster. */
-const PHRASE_WEIGHT_PRIMARY = 200;
+  '"DM Sans", "Plus Jakarta Sans", system-ui, sans-serif';
+const PHRASE_WEIGHT_PRIMARY = 100;
 
-/** Tracking positivo (px): más aire entre letras; mismo valor en measure + raster. */
+/** -0.02em como las palabras grandes en WhatIBuild. */
 function phraseLetterSpacingPx(fontPx: number) {
-  return `${Math.max(1.2, fontPx * 0.078).toFixed(1)}px`;
+  return `${(-fontPx * 0.02).toFixed(2)}px`;
 }
 
 /**
@@ -145,7 +144,7 @@ async function sampleTextPositions(
     await document.fonts.ready;
     try {
       await document.fonts.load(
-        `${PHRASE_WEIGHT_PRIMARY} ${fontPx}px Inter`,
+        `${PHRASE_WEIGHT_PRIMARY} ${fontPx}px DM Sans`,
       );
     } catch {
       /* ignore */
@@ -156,10 +155,10 @@ async function sampleTextPositions(
     const w = PHRASE_WEIGHT_PRIMARY;
     const candidates = [
       `${w} ${px} ${PHRASE_FONT_STACK}`,
+      `200 ${px} ${PHRASE_FONT_STACK}`,
       `300 ${px} ${PHRASE_FONT_STACK}`,
-      `400 ${px} ${PHRASE_FONT_STACK}`,
-      `300 ${px} "Plus Jakarta Sans", sans-serif`,
-      `200 ${px} system-ui, sans-serif`,
+      `200 ${px} "Plus Jakarta Sans", sans-serif`,
+      `300 ${px} system-ui, sans-serif`,
     ];
 
     const x1Scan = Math.min(W - 1, Math.ceil(textRightX));
@@ -188,8 +187,8 @@ async function sampleTextPositions(
         const row = y * W * 4;
         for (let x = x0; x <= x1; x += step) {
           const a = data[row + x * 4 + 3];
-          if (a > 13) pts.push({ x, y });
-          else if (a > 4) {
+          if (a > 5) pts.push({ x, y });
+          else if (a > 1) {
             const idx = (xx: number, yy: number) =>
               yy >= y0 && yy <= y1 && xx >= x0 && xx <= x1
                 ? data[yy * W * 4 + xx * 4 + 3]
@@ -202,7 +201,7 @@ async function sampleTextPositions(
             const d2 = idx(x - 1, y + 1);
             const d3 = idx(x + 1, y - 1);
             const d4 = idx(x - 1, y - 1);
-            const thr = 28;
+            const thr = 14;
             if (
               n1 > thr ||
               n2 > thr ||
@@ -220,7 +219,7 @@ async function sampleTextPositions(
       }
 
       if (pts.length > best.length) best = pts;
-      if (best.length >= Math.min(count * 3.85, 210000)) break;
+      if (best.length >= Math.min(count * 5.2, 320000)) break;
     }
   } finally {
     off.remove();
@@ -508,7 +507,7 @@ export default function VinylMorph({ onComplete }: VinylMorphProps) {
             p.px = lerp(p.sx, p.tx, mp);
             p.py = lerp(p.sy, p.ty, mp);
             const a = lerp(0.48, 0.94, mp);
-            const rad = lerp(1.7, 0.62, mp);
+            const rad = lerp(1.7, 0.82, mp);
             ctx.beginPath();
             ctx.arc(p.px, p.py, rad, 0, Math.PI * 2);
             ctx.fillStyle = `rgba(${LETTER_ACCENT}, ${a})`;
@@ -522,7 +521,7 @@ export default function VinylMorph({ onComplete }: VinylMorphProps) {
           );
           particles.forEach((p) => {
             ctx.beginPath();
-            ctx.arc(p.tx, p.ty, 0.62, 0, Math.PI * 2);
+            ctx.arc(p.tx, p.ty, 0.82, 0, Math.PI * 2);
             ctx.fillStyle = `rgba(${LETTER_ACCENT}, 0.94)`;
             ctx.fill();
           });
@@ -537,7 +536,7 @@ export default function VinylMorph({ onComplete }: VinylMorphProps) {
           ctx.globalAlpha = Math.max(0, fa);
           particles.forEach((p) => {
             ctx.beginPath();
-            ctx.arc(p.tx, p.ty, 0.62, 0, Math.PI * 2);
+            ctx.arc(p.tx, p.ty, 0.82, 0, Math.PI * 2);
             ctx.fillStyle = `rgba(${LETTER_ACCENT}, 0.94)`;
             ctx.fill();
           });
@@ -559,7 +558,7 @@ export default function VinylMorph({ onComplete }: VinylMorphProps) {
       await document.fonts.ready;
       try {
         await document.fonts.load(
-          `${PHRASE_WEIGHT_PRIMARY} 200px Inter`,
+          `${PHRASE_WEIGHT_PRIMARY} 200px DM Sans`,
         );
       } catch {
         /* ignore */
@@ -578,7 +577,8 @@ export default function VinylMorph({ onComplete }: VinylMorphProps) {
         );
       };
 
-      let phraseFontPx = 186;
+      /* Misma tipografía que WhatIBuild, menor: ~4.8vw tope 96px vs hero clamp 72–160 / 12vw. */
+      let phraseFontPx = Math.min(96, Math.max(34, Math.round(W * 0.048)));
       while (phraseFontPx >= 30 && measureMax(phraseFontPx) > availableW) {
         phraseFontPx -= 2;
       }
@@ -586,7 +586,7 @@ export default function VinylMorph({ onComplete }: VinylMorphProps) {
       const textBlockW = measureMax(phraseFontPx);
       const textRightX = Math.min(W - 2, textAnchorX + textBlockW + 72);
 
-      const lineHeight = phraseFontPx * 1.09;
+      const lineHeight = phraseFontPx * 1.05;
       let phraseY1 = cy - lineHeight * 0.5;
       let phraseY2 = cy + lineHeight * 0.5;
       const vPad = phraseFontPx * 0.55 + 8;

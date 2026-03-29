@@ -15,27 +15,42 @@ const wordStyle = {
   textAlign: "center" as const,
 };
 
-function BuildWord({ text, index }: { text: string; index: number }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const isInView = useInView(ref, { once: true, margin: "-12% 0px -8% 0px" });
+/** Fila alta para que no quepan las tres a la vez: cada useInView dispara al hacer scroll. */
+function BuildWord({ text }: { text: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, {
+    once: true,
+    amount: 0.42,
+    margin: "-8% 0px -12% 0px",
+  });
 
   return (
-    <motion.span
+    <div
       ref={ref}
-      style={wordStyle}
-      initial={{ opacity: 0, color: "rgba(0,100,255,0.9)" }}
-      animate={
-        isInView
-          ? { opacity: 1, color: "rgba(255,255,255,0.92)" }
-          : { opacity: 0, color: "rgba(0,100,255,0.9)" }
-      }
-      transition={{
-        opacity: { duration: 0.6, delay: index * 0.15 },
-        color: { duration: 1.2, delay: index * 0.15 },
+      style={{
+        minHeight: "min(42vh, 420px)",
+        display: "flex",
+        width: "100%",
+        alignItems: "center",
+        justifyContent: "center",
       }}
     >
-      {text}
-    </motion.span>
+      <motion.span
+        style={wordStyle}
+        initial={{ opacity: 0, color: "rgba(0,100,255,0.9)" }}
+        animate={
+          isInView
+            ? { opacity: 1, color: "rgba(255,255,255,0.92)" }
+            : { opacity: 0, color: "rgba(0,100,255,0.9)" }
+        }
+        transition={{
+          opacity: { duration: 0.6 },
+          color: { duration: 1.2 },
+        }}
+      >
+        {text}
+      </motion.span>
+    </div>
   );
 }
 
@@ -48,14 +63,14 @@ export default function WhatIBuild() {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
+        justifyContent: "flex-start",
         gap: "0.1em",
-        padding: "10vh 5vw",
+        padding: "12vh 5vw 28vh",
       }}
       className="relative z-10"
     >
-      {WORDS.map((w, i) => (
-        <BuildWord key={w} text={w} index={i} />
+      {WORDS.map((w) => (
+        <BuildWord key={w} text={w} />
       ))}
     </section>
   );

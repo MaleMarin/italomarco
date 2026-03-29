@@ -19,6 +19,7 @@ const sans = DM_Sans({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
+  weight: ["100", "200", "300", "400", "500"],
 });
 
 const plusJakarta = Plus_Jakarta_Sans({

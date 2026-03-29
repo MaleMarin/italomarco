@@ -78,7 +78,7 @@ export default function Home() {
   return (
     <div
       ref={rootRef}
-      className="relative w-full overflow-hidden"
+      className="relative w-full"
       style={{
         minHeight: "100dvh",
         backgroundColor: "#020202",
@@ -127,7 +127,7 @@ export default function Home() {
           },
         }}
         style={{ pointerEvents: siteVisible ? "auto" : "none" }}
-        className="w-full"
+        className="w-full overflow-x-hidden"
       >
         <motion.div
           className="relative flex min-h-[calc(100dvh-3.5rem)] flex-col md:min-h-[calc(100dvh-4rem)]"
