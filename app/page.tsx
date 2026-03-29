@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { useHeaderIntro } from "@/components/Providers";
 import WhatIBuild from "@/components/sections/WhatIBuild";
-import Credits from "@/components/sections/Credits";
+import Services from "@/components/sections/Services";
 import Contact from "@/components/sections/Contact";
 
 const VinylMorph = dynamic(
@@ -178,7 +178,7 @@ export default function Home() {
         />
 
         <WhatIBuild />
-        <Credits />
+        <Services />
         <Contact />
 
         <footer
