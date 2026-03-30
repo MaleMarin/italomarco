@@ -1,15 +1,17 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { useHeaderIntro } from "@/components/Providers";
+import VinylMorph from "@/components/VinylMorph";
 import WhatIBuild from "@/components/sections/WhatIBuild";
 import Services from "@/components/sections/Services";
 import Contact from "@/components/sections/Contact";
-
-const VinylMorph = dynamic(() => import("@/components/VinylMorph"), {
-  ssr: false,
-});
 
 import {
   motion,
@@ -27,24 +29,25 @@ const FOOTER = "PRODUCCIÓN · MEZCLA · IDENTIDAD";
 
 const springLight = { stiffness: 38, damping: 32, mass: 1.1 };
 
-/** Si el canvas no llama onComplete, desmontamos el intro para no quedar en negro para siempre. */
-const VINYL_MAX_MS = 24000;
+/** Si el intro no termina, desmontamos la capa. Debe superar morph + hold + fade si el morph se alarga (targets tardíos). */
+const VINYL_MAX_MS = 20000;
 
 export default function Home() {
   const [showLine, setShowLine] = useState(false);
-  /** false = mostrar VinylMorph; true = ya no montar intro (fin normal o corte). */
   const [hideVinyl, setHideVinyl] = useState(false);
   const { setHomeIntroComplete } = useHeaderIntro();
+  const introNotifiedRef = useRef(false);
 
-  useEffect(() => {
-    setHomeIntroComplete(false);
+  /** Header visible durante el intro (antes quedaba en opacity 0 y parecía “sitio en blanco”). */
+  useLayoutEffect(() => {
+    setHomeIntroComplete(true);
   }, [setHomeIntroComplete]);
-
-  const reduce = useReducedMotion();
 
   useEffect(() => {
     if (hideVinyl) return;
     const t = window.setTimeout(() => {
+      if (introNotifiedRef.current) return;
+      introNotifiedRef.current = true;
       setHideVinyl(true);
       setHomeIntroComplete(true);
     }, VINYL_MAX_MS);
@@ -52,6 +55,8 @@ export default function Home() {
   }, [hideVinyl, setHomeIntroComplete]);
 
   const onVinylComplete = useCallback(() => {
+    if (introNotifiedRef.current) return;
+    introNotifiedRef.current = true;
     setHideVinyl(true);
     setHomeIntroComplete(true);
     setShowLine(true);
@@ -59,6 +64,8 @@ export default function Home() {
       window.setTimeout(() => setShowLine(false), 1200);
     }, 700);
   }, [setHomeIntroComplete]);
+
+  const reduce = useReducedMotion();
 
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -146,7 +153,7 @@ export default function Home() {
           />
 
           <div
-            className="relative z-10 flex min-h-[min(45dvh,320px)] flex-1 flex-col justify-center px-5 pb-8 pt-10 md:px-10 md:pt-14"
+            className="relative z-10 flex min-h-[min(18dvh,140px)] shrink-0 flex-col justify-center px-5 pb-4 pt-8 md:px-10 md:pt-10"
             aria-hidden
           />
 
@@ -185,7 +192,6 @@ export default function Home() {
         </motion.div>
       </div>
 
-      {/* prefers-reduced-motion ya no desmonta el canvas (antes nunca veías cambios en surcos). */}
       {!hideVinyl ? (
         <VinylMorph
           onComplete={onVinylComplete}
@@ -205,7 +211,7 @@ export default function Home() {
           height: "1px",
           background: "rgba(255,255,255,0.55)",
           transformOrigin: "center center",
-          zIndex: 100002,
+          zIndex: 108,
           pointerEvents: "none",
         }}
       />
