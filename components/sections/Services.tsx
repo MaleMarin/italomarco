@@ -4,84 +4,42 @@ import { motion } from "framer-motion";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-type TagVariant = "blue" | "default" | "muted";
-
 const CARDS = [
   {
-    icon: "🎛",
     title: "Producción musical",
     description:
       "Del concepto al master. Beats, arreglos, mezcla y dirección sonora completa.",
-    tag: "DESDE $200 USD",
-    tagVariant: "blue" as TagVariant,
     colSpanMd: 2 as const,
   },
   {
-    icon: "🎚",
     title: "Mezcla y masterización",
     description:
       "Tu track, elevado. Claridad, profundidad y volumen de release.",
-    tag: "DESDE $80 USD",
-    tagVariant: "default" as TagVariant,
     colSpanMd: 1 as const,
   },
   {
-    icon: "👻",
     title: "Ghost production",
     description: "Produzco bajo tu nombre. 100% confidencial.",
-    tag: "COTIZAR",
-    tagVariant: "default" as TagVariant,
     colSpanMd: 1 as const,
   },
   {
-    icon: "🎥",
     title: "Live sessions",
     description:
       "Captura y mezcla de sesiones en vivo para bandas emergentes.",
-    tag: "COTIZAR",
-    tagVariant: "default" as TagVariant,
     colSpanMd: 1 as const,
   },
   {
-    icon: "🔊",
     title: "Audio logos",
     description: "Identidad sonora para marcas y creadores.",
-    tag: "DESDE $150 USD",
-    tagVariant: "default" as TagVariant,
     colSpanMd: 1 as const,
   },
   {
-    icon: "📦",
     title: "Sample packs",
     description:
       "Sonidos únicos grabados en estudio. Listos para tu próxima producción.",
-    tag: "PRÓXIMAMENTE",
-    tagVariant: "muted" as TagVariant,
     colSpanMd: 2 as const,
   },
 ];
-
-function tagStyles(variant: TagVariant) {
-  if (variant === "blue") {
-    return {
-      background: "rgba(0,100,255,0.15)",
-      borderColor: "rgba(0,100,255,0.3)",
-      color: "rgba(255,255,255,0.85)",
-    };
-  }
-  if (variant === "muted") {
-    return {
-      background: "rgba(255,255,255,0.1)",
-      borderColor: "rgba(255,255,255,0.15)",
-      color: "rgba(255,255,255,0.55)",
-    };
-  }
-  return {
-    background: "rgba(255,255,255,0.06)",
-    borderColor: "rgba(255,255,255,0.12)",
-    color: "rgba(255,255,255,0.65)",
-  };
-}
 
 function onCardMouseMove(e: React.MouseEvent<HTMLElement>) {
   const el = e.currentTarget;
@@ -147,15 +105,6 @@ export default function Services() {
               }}
             />
             <div className="relative z-[1]">
-              <div
-                style={{
-                  fontSize: "28px",
-                  marginBottom: "16px",
-                  lineHeight: 1,
-                }}
-              >
-                {card.icon}
-              </div>
               <h3
                 className="m-0"
                 style={{
@@ -179,21 +128,6 @@ export default function Services() {
               >
                 {card.description}
               </p>
-              <span
-                style={{
-                  fontSize: "10px",
-                  letterSpacing: "0.15em",
-                  textTransform: "uppercase",
-                  padding: "4px 10px",
-                  borderRadius: "20px",
-                  border: "0.5px solid",
-                  display: "inline-block",
-                  fontWeight: 500,
-                  ...tagStyles(card.tagVariant),
-                }}
-              >
-                {card.tag}
-              </span>
             </div>
           </motion.article>
         ))}
