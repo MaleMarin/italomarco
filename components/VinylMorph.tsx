@@ -53,10 +53,10 @@ function morphFlowEaseTail(linearT: number, tailFrac = 0.14) {
   return v0 + (1 - v0) * w;
 }
 
-/** Ease-in-out cúbico: arranque y freno suaves en el giro del disco. */
+/** 1 - (1-t)³: arranca con inercia y frena suave al llegar a 2π. */
 function easeOutCubic(t: number) {
   const u = Math.max(0, Math.min(1, t));
-  return u < 0.5 ? 4 * u * u * u : 1 - (-2 * u + 2) ** 3 / 2;
+  return 1 - (1 - u) ** 3;
 }
 
 export type VinylMorphProps = {
@@ -334,7 +334,7 @@ export default function VinylMorph({
     );
     failsafeTimer = window.setTimeout(() => finishIntro(), failsafeMs);
     /** Inicio del morph mientras el plato aún frena (fracción de T_DISK). */
-    const morphStartFrac = prefersReducedMotion ? 0.42 : 0.28;
+    const morphStartFrac = prefersReducedMotion ? 0.42 : 0.36;
     const morphStart = tDisk * morphStartFrac;
 
     const cx = W / 2;
