@@ -3,6 +3,10 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { usePathname } from "next/navigation";
 
+/**
+ * Transición entre rutas sin capa negra ni blur en la entrada:
+ * eso podía dejar el árbol en opacity 0 / fondo opaco en algunos casos (AnimatePresence + FM).
+ */
 export default function Template({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const reduce = useReducedMotion();
@@ -12,26 +16,14 @@ export default function Template({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
+    <AnimatePresence mode="sync">
       <motion.div
         key={pathname}
-        className="min-h-full min-h-[100dvh]"
-        initial={{
-          opacity: 0,
-          filter: "blur(20px)",
-          backgroundColor: "rgb(0,0,0)",
-        }}
-        animate={{
-          opacity: 1,
-          filter: "blur(0px)",
-          backgroundColor: "rgba(0,0,0,0)",
-        }}
-        exit={{
-          opacity: 0,
-          filter: "blur(20px)",
-          backgroundColor: "rgb(0,0,0)",
-        }}
-        transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+        className="min-h-[100dvh] w-full"
+        initial={false}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0.85 }}
+        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
       >
         {children}
       </motion.div>

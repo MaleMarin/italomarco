@@ -1,16 +1,16 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useHeaderIntro } from "@/components/Providers";
 import WhatIBuild from "@/components/sections/WhatIBuild";
 import Services from "@/components/sections/Services";
 import Contact from "@/components/sections/Contact";
 
-const VinylMorph = dynamic(
-  () => import("@/components/VinylMorph"),
-  { ssr: false },
-);
+const VinylMorph = dynamic(() => import("@/components/VinylMorph"), {
+  ssr: false,
+});
+
 import {
   motion,
   useMotionValue,
@@ -27,19 +27,39 @@ const FOOTER = "PRODUCCIÓN · MEZCLA · IDENTIDAD";
 
 const springLight = { stiffness: 38, damping: 32, mass: 1.1 };
 
+/** Si el canvas no llama onComplete, desmontamos el intro para no quedar en negro para siempre. */
+const VINYL_MAX_MS = 24000;
+
 export default function Home() {
-  const [siteVisible, setSiteVisible] = useState(false);
   const [showLine, setShowLine] = useState(false);
+  /** false = mostrar VinylMorph; true = ya no montar intro (fin normal o corte). */
+  const [hideVinyl, setHideVinyl] = useState(false);
   const { setHomeIntroComplete } = useHeaderIntro();
 
   useEffect(() => {
     setHomeIntroComplete(false);
   }, [setHomeIntroComplete]);
 
-  useEffect(() => {
-    if (siteVisible) setHomeIntroComplete(true);
-  }, [siteVisible, setHomeIntroComplete]);
   const reduce = useReducedMotion();
+
+  useEffect(() => {
+    if (hideVinyl) return;
+    const t = window.setTimeout(() => {
+      setHideVinyl(true);
+      setHomeIntroComplete(true);
+    }, VINYL_MAX_MS);
+    return () => window.clearTimeout(t);
+  }, [hideVinyl, setHomeIntroComplete]);
+
+  const onVinylComplete = useCallback(() => {
+    setHideVinyl(true);
+    setHomeIntroComplete(true);
+    setShowLine(true);
+    window.setTimeout(() => {
+      window.setTimeout(() => setShowLine(false), 1200);
+    }, 700);
+  }, [setHomeIntroComplete]);
+
   const rootRef = useRef<HTMLDivElement>(null);
 
   const mx = useMotionValue(0.5);
@@ -47,7 +67,6 @@ export default function Home() {
   const sx = useSpring(mx, reduce ? { stiffness: 500, damping: 50 } : springLight);
   const sy = useSpring(my, reduce ? { stiffness: 500, damping: 50 } : springLight);
 
-  /* Parallax horizontal suave — sin rotate3D (más estable y legible) */
   const driftX = useTransform(sx, [0, 1], reduce ? [0, 0] : [-18, 18]);
   const driftY = useTransform(sy, [0, 1], reduce ? [0, 0] : [-12, 12]);
 
@@ -85,15 +104,95 @@ export default function Home() {
         color: "#F9F9F9",
       }}
     >
-      <VinylMorph
-        onComplete={() => {
-          setShowLine(true);
-          setTimeout(() => {
-            setSiteVisible(true);
-            setTimeout(() => setShowLine(false), 1200);
-          }, 700);
-        }}
-      />
+      <div className="relative z-[5] w-full overflow-x-hidden">
+        <motion.div
+          className="relative flex min-h-[calc(100dvh-3.5rem)] flex-col md:min-h-[calc(100dvh-4rem)]"
+          style={{ x: driftX, y: driftY }}
+        >
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-0"
+            style={{
+              background:
+                "radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 38%), #7a7f8c 0%, #5c616e 14%, #3d424f 32%, #22262f 56%, #101216 78%, #020202 100%)",
+            }}
+          />
+
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-[1]"
+            style={{
+              background:
+                "radial-gradient(ellipse 95% 85% at 50% 45%, transparent 25%, rgba(2,2,2,0.5) 85%, #020202 100%)",
+            }}
+          />
+
+          <motion.div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-[2] opacity-[0.07] mix-blend-soft-light"
+            style={{
+              backgroundImage: `url("${noiseSvg}")`,
+              backgroundRepeat: "repeat",
+              backgroundSize: "200px 200px",
+            }}
+            animate={
+              reduce
+                ? undefined
+                : { backgroundPosition: ["0% 0%", "3% 2%", "-2% 1%", "0% 0%"] }
+            }
+            transition={
+              reduce ? undefined : { duration: 18, repeat: Infinity, ease: "linear" }
+            }
+          />
+
+          <div
+            className="relative z-10 flex min-h-[min(45dvh,320px)] flex-1 flex-col justify-center px-5 pb-8 pt-10 md:px-10 md:pt-14"
+            aria-hidden
+          />
+
+          <WhatIBuild />
+          <Services />
+          <Contact />
+
+          <footer
+            className="relative z-10 flex justify-center px-6 pb-10 pt-6 md:pb-12"
+            aria-label="Pilares"
+          >
+            <p className="flex flex-wrap justify-center text-center text-[9px] font-sans uppercase tracking-[0.85em] text-white/40">
+              {FOOTER.split("").map((char, i) => (
+                <motion.span
+                  key={`${char}-${i}`}
+                  className="inline-block"
+                  whileHover={
+                    reduce
+                      ? undefined
+                      : {
+                          y: -4,
+                          color: "rgba(249,249,249,0.75)",
+                          transition: {
+                            type: "spring",
+                            stiffness: 400,
+                            damping: 16,
+                          },
+                        }
+                  }
+                >
+                  {char === " " ? "\u00a0" : char}
+                </motion.span>
+              ))}
+            </p>
+          </footer>
+        </motion.div>
+      </div>
+
+      {/* prefers-reduced-motion ya no desmonta el canvas (antes nunca veías cambios en surcos). */}
+      {!hideVinyl ? (
+        <VinylMorph
+          onComplete={onVinylComplete}
+          prefersReducedMotion={reduce === true}
+        />
+      ) : null}
+
       <motion.div
         initial={{ scaleX: 0 }}
         animate={{ scaleX: showLine ? 1 : 0 }}
@@ -106,111 +205,10 @@ export default function Home() {
           height: "1px",
           background: "rgba(255,255,255,0.55)",
           transformOrigin: "center center",
-          zIndex: 15,
+          zIndex: 100002,
           pointerEvents: "none",
         }}
       />
-      <motion.div
-        initial={false}
-        animate={{
-          opacity: siteVisible ? 1 : 0,
-          clipPath: siteVisible
-            ? "inset(0% 0% 0% 0%)"
-            : "inset(50% 0% 50% 0%)",
-        }}
-        transition={{
-          opacity: { duration: 0.01 },
-          clipPath: {
-            duration: 1.4,
-            ease: [0.16, 1, 0.3, 1],
-            delay: 0.05,
-          },
-        }}
-        style={{ pointerEvents: siteVisible ? "auto" : "none" }}
-        className="w-full overflow-x-hidden"
-      >
-        <motion.div
-          className="relative flex min-h-[calc(100dvh-3.5rem)] flex-col md:min-h-[calc(100dvh-4rem)]"
-          style={{ x: driftX, y: driftY }}
-        >
-        {/* Luz que sigue al puntero */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 z-0"
-          style={{
-            background:
-              "radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 38%), #7a7f8c 0%, #5c616e 14%, #3d424f 32%, #22262f 56%, #101216 78%, #020202 100%)",
-          }}
-        />
-
-        {/* Viñeta tipo proyector — sin multiply encima del texto */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 z-[1]"
-          style={{
-            background:
-              "radial-gradient(ellipse 95% 85% at 50% 45%, transparent 25%, rgba(2,2,2,0.5) 85%, #020202 100%)",
-          }}
-        />
-
-        {/* Grano animado, discreto */}
-        <motion.div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 z-[2] opacity-[0.07] mix-blend-soft-light"
-          style={{
-            backgroundImage: `url("${noiseSvg}")`,
-            backgroundRepeat: "repeat",
-            backgroundSize: "200px 200px",
-          }}
-          animate={
-            reduce
-              ? undefined
-              : { backgroundPosition: ["0% 0%", "3% 2%", "-2% 1%", "0% 0%"] }
-          }
-          transition={
-            reduce ? undefined : { duration: 18, repeat: Infinity, ease: "linear" }
-          }
-        />
-
-        <div
-          className="relative z-10 flex min-h-[min(45dvh,320px)] flex-1 flex-col justify-center px-5 pb-8 pt-10 md:px-10 md:pt-14"
-          aria-hidden
-        />
-
-        <WhatIBuild />
-        <Services />
-        <Contact />
-
-        <footer
-          className="relative z-10 flex justify-center px-6 pb-10 pt-6 md:pb-12"
-          aria-label="Pilares"
-        >
-          <p className="flex flex-wrap justify-center text-center text-[9px] font-sans uppercase tracking-[0.85em] text-white/40">
-            {FOOTER.split("").map((char, i) => (
-              <motion.span
-                key={`${char}-${i}`}
-                className="inline-block"
-                whileHover={
-                  reduce
-                    ? undefined
-                    : {
-                        y: -4,
-                        color: "rgba(249,249,249,0.75)",
-                        transition: {
-                          type: "spring",
-                          stiffness: 400,
-                          damping: 16,
-                        },
-                      }
-                }
-              >
-                {char === " " ? "\u00a0" : char}
-              </motion.span>
-            ))}
-          </p>
-        </footer>
-        </motion.div>
-      </motion.div>
     </div>
   );
 }

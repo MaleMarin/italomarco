@@ -394,7 +394,8 @@ export function FluidProvider({ children }: { children: ReactNode }) {
       ) : null}
       <motion.div
         aria-hidden
-        className="pointer-events-none fixed inset-0 z-[219]"
+        className="pointer-events-none fixed inset-0 z-[219] bg-transparent"
+        style={{ backgroundColor: "transparent" }}
         animate={{ opacity: cursorHidden ? 0 : 1 }}
         transition={{ duration: 0.15 }}
       >

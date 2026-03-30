@@ -70,9 +70,11 @@ export default function RootLayout({
             <Atmosphere>
               <DocumentLang />
               <Navbar />
-              <main className="relative z-10">
+              <main className="relative z-10 min-h-[100dvh]">
                 <RouteAmbient />
-                <div className="relative z-[2]">{children}</div>
+                <div className="relative z-[2] min-h-[100dvh] w-full">
+                  {children}
+                </div>
               </main>
               <CartPanel />
             </Atmosphere>
