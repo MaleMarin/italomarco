@@ -35,11 +35,26 @@ const VinylMorph = dynamic(() => import("@/components/VinylMorph"), {
   ),
 });
 
+/**
+ * En `development` el intro se omite para ver HMR/recargas al instante.
+ * Forzar intro: `NEXT_PUBLIC_VINYL_INTRO=true npm run dev`
+ */
+const skipVinylInDev =
+  process.env.NODE_ENV === "development" &&
+  process.env.NEXT_PUBLIC_VINYL_INTRO !== "true";
+
 /** Shell de la ruta `/`: intro de vinilo, parallax y pie; el cuerpo lo compone `app/page.tsx`. */
 export default function VinylHome({ children }: { children: ReactNode }) {
-  const [hideVinyl, setHideVinyl] = useState(false);
+  const [hideVinyl, setHideVinyl] = useState(skipVinylInDev);
   const { setHomeIntroComplete } = useHeaderIntro();
   const introNotifiedRef = useRef(false);
+
+  useEffect(() => {
+    if (!skipVinylInDev) return;
+    if (introNotifiedRef.current) return;
+    introNotifiedRef.current = true;
+    setHomeIntroComplete(true);
+  }, [setHomeIntroComplete]);
 
   useEffect(() => {
     if (hideVinyl) return;
@@ -94,13 +109,6 @@ export default function VinylHome({ children }: { children: ReactNode }) {
     el.style.setProperty("--mouse-x", "50%");
     el.style.setProperty("--mouse-y", "38%");
   }, []);
-
-  /** Al cerrar el vinilo, centrar el parallax para evitar un salto del bloque con la frase. */
-  useEffect(() => {
-    if (!hideVinyl || reduce) return;
-    mx.set(0.5);
-    my.set(0.38);
-  }, [hideVinyl, mx, my, reduce]);
 
   return (
     <div
@@ -161,29 +169,79 @@ export default function VinylHome({ children }: { children: ReactNode }) {
           className="relative z-10 flex justify-center px-6 pb-10 pt-6 md:pb-12"
           aria-label="Pilares"
         >
-          <p className="flex flex-wrap justify-center text-center text-[9px] font-sans uppercase tracking-[0.85em] text-white/40">
-            {FOOTER.split("").map((char, i) => (
-              <motion.span
-                key={`${char}-${i}`}
-                className="inline-block"
-                whileHover={
-                  reduce
-                    ? undefined
-                    : {
-                        y: -4,
-                        color: "rgba(249,249,249,0.75)",
-                        transition: {
-                          type: "spring",
-                          stiffness: 400,
-                          damping: 16,
-                        },
-                      }
-                }
-              >
-                {char === " " ? "\u00a0" : char}
-              </motion.span>
-            ))}
-          </p>
+          <div className="flex flex-col items-center">
+            <p className="flex flex-wrap justify-center text-center text-[9px] font-sans uppercase tracking-[0.85em] text-white/40">
+              {FOOTER.split("").map((char, i) => (
+                <motion.span
+                  key={`${char}-${i}`}
+                  className="inline-block"
+                  whileHover={
+                    reduce
+                      ? undefined
+                      : {
+                          y: -4,
+                          color: "rgba(249,249,249,0.75)",
+                          transition: {
+                            type: "spring",
+                            stiffness: 400,
+                            damping: 16,
+                          },
+                        }
+                  }
+                >
+                  {char === " " ? "\u00a0" : char}
+                </motion.span>
+              ))}
+            </p>
+            <div
+              style={{
+                display: "flex",
+                gap: "24px",
+                justifyContent: "center",
+                marginTop: "16px",
+              }}
+            >
+              {[
+                {
+                  label: "Spotify",
+                  href: "https://open.spotify.com/intl-es/artist/6ZHmI6dQAtHX8h7RO8VcZX?si=vtvgNyE3TEmGHszCAAUPVQ",
+                },
+                {
+                  label: "Instagram",
+                  href: "https://www.instagram.com/italomarcoo/?hl=es",
+                },
+                {
+                  label: "TikTok",
+                  href: "https://www.tiktok.com/@italomarco1?lang=es-419",
+                },
+              ].map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontFamily: '"DM Sans", sans-serif',
+                    fontWeight: 200,
+                    fontSize: "9px",
+                    letterSpacing: "0.2em",
+                    textTransform: "uppercase",
+                    color: "rgba(255,255,255,0.2)",
+                    textDecoration: "none",
+                    transition: "color 0.3s",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.color = "rgba(255,255,255,0.7)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.color = "rgba(255,255,255,0.2)")
+                  }
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          </div>
         </footer>
       </div>
 
