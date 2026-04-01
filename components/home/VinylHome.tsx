@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useHeaderIntro } from "@/components/Providers";
+import { useTranslations } from "@/lib/useTranslations";
 
 import {
   motion,
@@ -14,25 +15,31 @@ import {
   useMotionValueEvent,
 } from "framer-motion";
 import { vinylParentUnmountMaxMs } from "@/lib/vinylIntroTiming";
+import { VinylIntroPortal } from "@/components/VinylIntroPortal";
 
 const noiseSvg =
   "data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E";
-
-const FOOTER = "PRODUCCIÓN · MEZCLA · IDENTIDAD";
 
 const springLight = { stiffness: 38, damping: 32, mass: 1.1 };
 
 /** Mismo presupuesto temporal que el canvas (`lib/vinylIntroTiming.ts`) + margen. */
 const VINYL_MAX_MS = vinylParentUnmountMaxMs(4000);
 
+/** Misma capa oscura que el vinilo hasta que el chunk está listo — el hero va primero, sin mostrar la home detrás. */
+function VinylChunkLoading() {
+  return (
+    <VinylIntroPortal>
+      <div
+        className="fixed inset-0 bg-[#020202]"
+        aria-hidden
+      />
+    </VinylIntroPortal>
+  );
+}
+
 const VinylMorph = dynamic(() => import("@/components/VinylMorph"), {
   ssr: false,
-  loading: () => (
-    <div
-      className="pointer-events-none fixed inset-0 z-[240] bg-[#020202]"
-      aria-hidden
-    />
-  ),
+  loading: () => <VinylChunkLoading />,
 });
 
 /**
@@ -43,6 +50,7 @@ const skipVinylIntro = process.env.NEXT_PUBLIC_SKIP_VINYL_INTRO === "true";
 
 /** Shell de la ruta `/`: intro de vinilo, parallax y pie; el cuerpo lo compone `app/page.tsx`. */
 export default function VinylHome({ children }: { children: ReactNode }) {
+  const t = useTranslations();
   const [hideVinyl, setHideVinyl] = useState(skipVinylIntro);
   const { setHomeIntroComplete } = useHeaderIntro();
   const introNotifiedRef = useRef(false);
@@ -169,7 +177,7 @@ export default function VinylHome({ children }: { children: ReactNode }) {
         >
           <div className="flex flex-col items-center">
             <p className="flex flex-wrap justify-center text-center text-[9px] font-sans uppercase tracking-[0.85em] text-white/40">
-              {FOOTER.split("").map((char, i) => (
+              {t.homeFooter.split("").map((char, i) => (
                 <motion.span
                   key={`${char}-${i}`}
                   className="inline-block"
@@ -244,10 +252,12 @@ export default function VinylHome({ children }: { children: ReactNode }) {
       </div>
 
       {!hideVinyl ? (
-        <VinylMorph
-          onComplete={onVinylComplete}
-          prefersReducedMotion={reduce === true}
-        />
+        <VinylIntroPortal>
+          <VinylMorph
+            onComplete={onVinylComplete}
+            prefersReducedMotion={reduce === true}
+          />
+        </VinylIntroPortal>
       ) : null}
     </div>
   );

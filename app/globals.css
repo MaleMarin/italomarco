@@ -6,21 +6,24 @@
   /* Color sólido detrás del gradiente — si falla la imagen, no hay pantalla blanca */
   html {
     background-color: #020202;
-    @apply m-0 h-full scroll-smooth antialiased;
+    color-scheme: dark;
+    /* Sin isolation: isolate aquí — en algunos WebKit podía dejar la capa de página en blanco. */
+    @apply m-0 min-h-[100dvh] scroll-smooth antialiased;
     @apply bg-film-studio bg-fixed;
   }
 
   body {
     background-color: #020202;
-    @apply m-0 min-h-full min-h-[100dvh] bg-film-studio bg-fixed font-sans text-mist antialiased;
+    color-scheme: dark;
+    @apply m-0 min-h-[100dvh] bg-film-studio bg-fixed font-sans text-mist antialiased;
   }
 
-  /* Viñeta más ligera para no matar contraste */
+  /* Viñeta detrás del contenido (z negativo): z-2 + multiply podía oscurecer texto encima en algunos motores */
   body::before {
     content: "";
     position: fixed;
     inset: 0;
-    z-index: 2;
+    z-index: -1;
     pointer-events: none;
     opacity: 0.38;
     mix-blend-mode: multiply;
@@ -37,7 +40,7 @@
     content: "";
     position: fixed;
     inset: 0;
-    z-index: 1;
+    z-index: -1;
     pointer-events: none;
     opacity: 0.065;
     mix-blend-mode: soft-light;

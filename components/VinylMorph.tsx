@@ -506,6 +506,10 @@ export default function VinylMorph({
       ctx.restore();
     };
 
+    /** La frase (entrada) puede empezar este ms antes del morph del disco — hero lee antes. */
+    const PHRASE_HEAD_START_MS = 500;
+    const phraseWindowStart = morphStart - PHRASE_HEAD_START_MS;
+
     /** La frase empieza a salir este tiempo antes del fin del hold (misma hora de cierre total). */
     const FADE_LEAD_MS = 500;
     const fadeOutStart = Math.max(
@@ -550,62 +554,83 @@ export default function VinylMorph({
         const nameIntroRaw = Math.min(1, el / 160);
         const nameIntro = smootherstep01(nameIntroRaw);
 
-        if (el < morphStart) {
+        if (el < phraseWindowStart) {
           drawDiskBackdrop(1);
           drawDiskGrooves(diskRot, ripplePhase, 1);
           drawNeedle(1);
           applyNameFrame(nameIntro, 0, layout.nameBelowDiskY);
         } else if (el < morphEndEff) {
-          /** Surcos / halo / aguja: progreso lineal (sin ease quintic que frena al final). */
-          const morphLinear = Math.min(1, (el - morphStart) / tMorph);
-          const mp = morphLinear;
-          const morphGlobalP = Math.min(1, (el - morphStart) / tMorph);
-          /**
-           * mpDiss: el vinilo (surcos/aguja/halo) se mantiene “entero” al abrir el morph;
-           * así no hay un corte brusco justo cuando empieza a frenar.
-           */
-          const dissStart = 0.1;
-          const spanDiss = 1 - dissStart;
-          const tDiss =
-            mp <= dissStart
-              ? 0
-              : Math.min(1, (mp - dissStart) / spanDiss);
-          /** smoothstep(tDiss): arranque de disolución sin quiebre de derivada en dissStart. */
-          const mpDiss = tDiss * tDiss * (3 - 2 * tDiss);
-          /** En mpDiss=1 opacidad 0 (antes quedaba ~3% por el offset 0.04 → golpe al pasar a hold). */
-          const grooveA = Math.max(0, (1 - mpDiss) ** 1.08);
-          const backdropA = Math.max(0, 1 - mpDiss * 1.05);
-          const needleA = Math.max(0, 1 - mpDiss * 1.85);
+          /** Tiempo de revelado de texto adelantado respecto al morph del plato. */
+          const appearPhraseElapsed = el - morphStart + PHRASE_HEAD_START_MS;
 
-          if (backdropA > 0.02 || grooveA > 0.02) {
-            drawDiskBackdrop(backdropA);
-            drawDiskGrooves(diskRot, ripplePhase, grooveA);
+          let morphLinear = 0;
+          let mp = 0;
+          let morphGlobalP = 0;
+          let mpDiss = 0;
+
+          if (el < morphStart) {
+            drawDiskBackdrop(1);
+            drawDiskGrooves(diskRot, ripplePhase, 1);
+            drawNeedle(1);
+            applyNameFrame(nameIntro, 0, layout.nameBelowDiskY);
+          } else {
+            /** Surcos / halo / aguja: progreso lineal (sin ease quintic que frena al final). */
+            morphLinear = Math.min(1, (el - morphStart) / tMorph);
+            mp = morphLinear;
+            morphGlobalP = Math.min(1, (el - morphStart) / tMorph);
+            /**
+             * mpDiss: el vinilo (surcos/aguja/halo) se mantiene “entero” al abrir el morph;
+             * así no hay un corte brusco justo cuando empieza a frenar.
+             */
+            const dissStart = 0.1;
+            const spanDiss = 1 - dissStart;
+            const tDiss =
+              mp <= dissStart
+                ? 0
+                : Math.min(1, (mp - dissStart) / spanDiss);
+            /** smoothstep(tDiss): arranque de disolución sin quiebre de derivada en dissStart. */
+            mpDiss = tDiss * tDiss * (3 - 2 * tDiss);
+            /** En mpDiss=1 opacidad 0 (antes quedaba ~3% por el offset 0.04 → golpe al pasar a hold). */
+            const grooveA = Math.max(0, (1 - mpDiss) ** 1.08);
+            const backdropA = Math.max(0, 1 - mpDiss * 1.05);
+            const needleA = Math.max(0, 1 - mpDiss * 1.85);
+
+            if (backdropA > 0.02 || grooveA > 0.02) {
+              drawDiskBackdrop(backdropA);
+              drawDiskGrooves(diskRot, ripplePhase, grooveA);
+            }
+            drawNeedle(needleA);
+            const mpName = smootherstep01(mp);
+            applyNameFrame(
+              1,
+              layout.nameShiftTarget * mpName,
+              lerp(layout.nameBelowDiskY, layout.nameBelowPhraseY, mpName),
+            );
           }
-          drawNeedle(needleA);
-          const mpName = smootherstep01(mp);
-          applyNameFrame(
-            1,
-            layout.nameShiftTarget * mpName,
-            lerp(layout.nameBelowDiskY, layout.nameBelowPhraseY, mpName),
-          );
 
-          const appearElapsed = Math.max(0, el - morphStart);
           const maxG = H * 0.5 + 8;
           /** Progreso 0→1 a lo largo del morph: una sola curva suave (sin torres de smoothstep). */
-          const uMorph = Math.min(1, appearElapsed / Math.max(1, tMorph * 0.98));
+          const uMorph = Math.min(
+            1,
+            appearPhraseElapsed / Math.max(1, tMorph * 0.98),
+          );
           const phraseGate = cosineEase01(cosineEase01(uMorph));
-          /** Encaje con la disolución del disco (sin pelear con phraseGate). */
+          /** Encaje con la disolución del disco; antes de morphStart el texto puede leerse sobre plato entero. */
           const dissGate = cosineEase01(mpDiss);
+          const dissGateText = el < morphStart ? 1 : dissGate;
           const appear = phraseGate;
-          const textReveal = phraseGate * dissGate;
+          const textReveal = phraseGate * dissGateText;
           /** Brillo del texto: subida lenta y continua. */
-          const underlayA = (0.1 + morphGlobalP * 0.84) * textReveal;
+          const underlayA =
+            (0.1 + morphGlobalP * 0.84) * textReveal;
           /** Apertura vertical: misma familia de curva que el resto. */
-          const open = prefersReducedMotion ? 1 : cosineEase01(phraseGate * dissGate);
+          const open = prefersReducedMotion
+            ? 1
+            : cosineEase01(phraseGate * dissGateText);
           const splitGapPx = open * maxG;
           /** Línea chica primero, hero después — solapamiento suave, mismas bases de tiempo. */
           const uLines = cosineEase01(
-            Math.min(1, appearElapsed / Math.max(520, tMorph * 0.88)),
+            Math.min(1, appearPhraseElapsed / Math.max(520, tMorph * 0.88)),
           );
           const fade1 = prefersReducedMotion ? appear : cosineEase01(uLines / 0.52);
           const fade2 = prefersReducedMotion

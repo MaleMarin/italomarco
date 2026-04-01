@@ -1,24 +1,41 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
+import { useHeaderIntro } from "@/components/Providers";
+import { useTranslations } from "@/lib/useTranslations";
 
-const WORDS = [
-  { label: "Producción", href: "#produccion" },
-  { label: "Mezcla", href: "#mezcla" },
-  { label: "Identidad", href: "#identidad" },
-];
+const PILLAR_HREFS = ["#produccion", "#mezcla", "#identidad"] as const;
 
-function Word({ word, index }: { word: (typeof WORDS)[number]; index: number }) {
+/** Tras el intro del vinilo: respiro antes de la primera palabra (no chocar con la frase del canvas). */
+const PAUSE_AFTER_INTRO_S = 0.62;
+const PAUSE_AFTER_INTRO_REDUCED_S = 0.12;
+
+const hidden = { opacity: 0, filter: "blur(18px)", y: 24 };
+const visible = { opacity: 1, filter: "blur(0px)", y: 0 };
+
+function Word({
+  word,
+  index,
+  introDone,
+  baseDelay,
+  reduceMotion,
+}: {
+  word: { label: string; href: string };
+  index: number;
+  introDone: boolean;
+  baseDelay: number;
+  reduceMotion: boolean;
+}) {
   return (
     <motion.a
       href={word.href}
       aria-label={`${word.label}.`}
-      initial={{ opacity: 0, filter: "blur(18px)", y: 24 }}
-      animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+      initial={hidden}
+      animate={introDone ? visible : hidden}
       transition={{
-        duration: 0.9,
+        duration: reduceMotion ? 0.4 : 0.9,
         ease: [0.16, 1, 0.3, 1],
-        delay: index * 0.18,
+        delay: introDone ? baseDelay + index * 0.18 : 0,
       }}
       whileHover={{
         color: "#0052FF",
@@ -58,6 +75,15 @@ function Word({ word, index }: { word: (typeof WORDS)[number]; index: number }) 
 }
 
 export default function WhatIBuild() {
+  const t = useTranslations();
+  const { homeIntroComplete } = useHeaderIntro();
+  const reduceMotion = useReducedMotion() === true;
+  const baseDelay = reduceMotion ? PAUSE_AFTER_INTRO_REDUCED_S : PAUSE_AFTER_INTRO_S;
+  const words = t.homePillars.map((label, i) => ({
+    label,
+    href: PILLAR_HREFS[i] ?? "#",
+  }));
+
   return (
     <section
       id="what-i-build"
@@ -74,8 +100,15 @@ export default function WhatIBuild() {
         padding: "max(5vh, 4.5rem) 6vw 16vh",
       }}
     >
-      {WORDS.map((w, i) => (
-        <Word key={`${w.label}-${w.href}`} word={w} index={i} />
+      {words.map((w, i) => (
+        <Word
+          key={`${w.label}-${w.href}`}
+          word={w}
+          index={i}
+          introDone={homeIntroComplete}
+          baseDelay={baseDelay}
+          reduceMotion={reduceMotion}
+        />
       ))}
     </section>
   );

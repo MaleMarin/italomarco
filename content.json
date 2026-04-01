@@ -33,6 +33,8 @@
       "subtitle": "Production · Mixing · Identity.",
       "principle": "FIDELITY WITHOUT CONCESSIONS"
     },
+    "homePillars": ["Production", "Mix", "Identity"],
+    "homeFooter": "PRODUCTION · MIXING · IDENTITY",
     "services": {
       "creators": {
         "title": "Identity for Creators",
@@ -170,6 +172,8 @@
       "subtitle": "Producción · Mezcla · Identidad.",
       "principle": "FIDELIDAD SIN CONCESIONES"
     },
+    "homePillars": ["Producción", "Mezcla", "Identidad"],
+    "homeFooter": "PRODUCCIÓN · MEZCLA · IDENTIDAD",
     "services": {
       "creators": {
         "title": "Identidad para Creadores",

@@ -83,22 +83,22 @@ export function Navbar() {
         <ul className="hidden items-center gap-8 md:flex">
           <li>
             <SpringLink href="/proyectos" className={linkClass}>
-              Escuchar
+              {t.nav.projects}
             </SpringLink>
           </li>
           <li>
             <SpringLink href="/services" className={linkClass}>
-              Construir
+              {t.nav.services}
             </SpringLink>
           </li>
           <li>
             <SpringLink href="/store" className={linkClass}>
-              El proceso
+              {t.nav.lab}
             </SpringLink>
           </li>
           <li>
             <SpringLink href="/contact" className={linkClass}>
-              Escribir
+              {t.nav.contact}
             </SpringLink>
           </li>
         </ul>
@@ -167,7 +167,7 @@ export function Navbar() {
                 className={linkClass}
                 onClick={() => setOpen(false)}
               >
-                Escuchar
+                {t.nav.projects}
               </SpringLink>
             </li>
             <li>
@@ -176,7 +176,7 @@ export function Navbar() {
                 className={linkClass}
                 onClick={() => setOpen(false)}
               >
-                Construir
+                {t.nav.services}
               </SpringLink>
             </li>
             <li>
@@ -185,7 +185,7 @@ export function Navbar() {
                 className={linkClass}
                 onClick={() => setOpen(false)}
               >
-                El proceso
+                {t.nav.lab}
               </SpringLink>
             </li>
             <li>
@@ -194,7 +194,7 @@ export function Navbar() {
                 className={linkClass}
                 onClick={() => setOpen(false)}
               >
-                Escribir
+                {t.nav.contact}
               </SpringLink>
             </li>
             <li>

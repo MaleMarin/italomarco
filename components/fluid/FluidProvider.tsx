@@ -39,23 +39,9 @@ export function useFluidParallax() {
   return useContext(FluidContext);
 }
 
+/** Cursor personalizado desactivado: puntero del sistema (default / pointer en enlaces). */
 function useFluidEnabled() {
-  const [enabled, setEnabled] = useState(false);
-
-  useEffect(() => {
-    const mqFine = window.matchMedia("(pointer: fine)");
-    const mqMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const sync = () => setEnabled(mqFine.matches && !mqMotion.matches);
-    sync();
-    mqFine.addEventListener("change", sync);
-    mqMotion.addEventListener("change", sync);
-    return () => {
-      mqFine.removeEventListener("change", sync);
-      mqMotion.removeEventListener("change", sync);
-    };
-  }, []);
-
-  return enabled;
+  return false;
 }
 
 const GLOW_SIZE = 1020;
@@ -205,27 +191,10 @@ export function FluidProvider({ children }: { children: ReactNode }) {
 
   const cursorX = useMotionValue(-100);
   const cursorY = useMotionValue(-100);
-  const cursorSpringX = useSpring(cursorX, {
-    stiffness: 52,
-    damping: 21,
-    mass: 0.82,
-  });
-  const cursorSpringY = useSpring(cursorY, {
-    stiffness: 52,
-    damping: 21,
-    mass: 0.82,
-  });
-
-  const glowSpringX = useSpring(cursorX, {
-    stiffness: 22,
-    damping: 32,
-    mass: 1.35,
-  });
-  const glowSpringY = useSpring(cursorY, {
-    stiffness: 22,
-    damping: 34,
-    mass: 1.35,
-  });
+  /** Anillo y halo azul comparten el mismo spring — mismo centro; resorte firme = poco retraso respecto al puntero. */
+  const cursorSpringOpts = { stiffness: 220, damping: 28, mass: 0.45 };
+  const cursorSpringX = useSpring(cursorX, cursorSpringOpts);
+  const cursorSpringY = useSpring(cursorY, cursorSpringOpts);
 
   const parallaxRawX = useMotionValue(0);
   const parallaxRawY = useMotionValue(0);
@@ -378,36 +347,38 @@ export function FluidProvider({ children }: { children: ReactNode }) {
   return (
     <FluidContext.Provider value={ctx}>
       {enabled ? (
-        <motion.div
-          aria-hidden
-          className="pointer-events-none fixed inset-0 z-[3]"
-          animate={{ opacity: cursorHidden ? 0 : 1 }}
-          transition={{ duration: 0.2 }}
-        >
-          <FluidDiffuseGlow
-            enabled
-            glowX={glowSpringX}
-            glowY={glowSpringY}
-            opacity={glowOpacity}
-          />
-        </motion.div>
+        <>
+          <motion.div
+            aria-hidden
+            className="pointer-events-none fixed inset-0 z-[3]"
+            animate={{ opacity: cursorHidden ? 0 : 1 }}
+            transition={{ duration: 0.2 }}
+          >
+            <FluidDiffuseGlow
+              enabled
+              glowX={cursorSpringX}
+              glowY={cursorSpringY}
+              opacity={glowOpacity}
+            />
+          </motion.div>
+          <motion.div
+            aria-hidden
+            className="pointer-events-none fixed inset-0 z-[219] bg-transparent"
+            style={{ backgroundColor: "transparent" }}
+            animate={{ opacity: cursorHidden ? 0 : 1 }}
+            transition={{ duration: 0.15 }}
+          >
+            <FluidCursor
+              enabled={enabled}
+              cursorSpringX={cursorSpringX}
+              cursorSpringY={cursorSpringY}
+              diameterPx={cursorDiameter}
+              lensStyle={cursorLensStyle}
+              pulseVersion={pulseVersion}
+            />
+          </motion.div>
+        </>
       ) : null}
-      <motion.div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 z-[219] bg-transparent"
-        style={{ backgroundColor: "transparent" }}
-        animate={{ opacity: cursorHidden ? 0 : 1 }}
-        transition={{ duration: 0.15 }}
-      >
-        <FluidCursor
-          enabled={enabled}
-          cursorSpringX={cursorSpringX}
-          cursorSpringY={cursorSpringY}
-          diameterPx={cursorDiameter}
-          lensStyle={cursorLensStyle}
-          pulseVersion={pulseVersion}
-        />
-      </motion.div>
       {children}
     </FluidContext.Provider>
   );

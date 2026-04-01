@@ -13,6 +13,7 @@ import { Navbar } from "@/components/Navbar";
 import { CartPanel } from "@/components/store/CartPanel";
 import { Atmosphere } from "@/components/Atmosphere";
 import { RouteAmbient } from "@/components/RouteAmbient";
+import { DevViewportHint } from "@/components/DevViewportHint";
 import "./globals.css";
 
 const sans = DM_Sans({
@@ -51,12 +52,12 @@ const robotoMono = Roboto_Mono({
 
 export const metadata: Metadata = {
   title: "Ítalo Marco — Sonic Architecture",
-  description: "Traducir intenciones en sonido.",
+  description: "Translate intentions into sound.",
 };
 
 /** Si falla la carga de chunks CSS de Tailwind en dev, el HTML sigue siendo usable. */
 const CRITICAL_FALLBACK_CSS = `
-html{background:#020202}
+html{background:#020202;color-scheme:dark;min-height:100dvh}
 body{margin:0;min-height:100dvh;background:#020202;color:#f2f2f2;font-family:system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
 a{color:rgba(242,242,242,.55);text-decoration:none}
 a:hover{color:rgba(255,255,255,.88)}
@@ -75,9 +76,14 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="es"
+      lang="en"
       className={`${sans.variable} ${plusJakarta.variable} ${inter.variable} ${playfair.variable} ${robotoMono.variable}`}
-      style={{ backgroundColor: "#020202" }}
+      style={{
+        backgroundColor: "#020202",
+        color: "#F2F2F2",
+        minHeight: "100dvh",
+        colorScheme: "dark",
+      }}
     >
       <head>
         <style
@@ -98,7 +104,7 @@ export default function RootLayout({
             <Atmosphere>
               <DocumentLang />
               <Navbar />
-              <main className="relative z-10 min-h-[100dvh]">
+              <main className="relative z-10 isolate min-h-[100dvh]">
                 <RouteAmbient />
                 <div className="relative z-[2] min-h-[100dvh] w-full bg-[#020202]">
                   {children}
@@ -108,6 +114,15 @@ export default function RootLayout({
             </Atmosphere>
           </FluidProvider>
         </Providers>
+        {/*
+          Ancla fija para el hero del vinilo: z-[260] > Navbar z-[210] > main z-10.
+          Los hijos del portal pueden usar pointer-events (p. ej. canvas del intro).
+        */}
+        <div
+          id="vinyl-intro-root"
+          className="pointer-events-none fixed inset-0 z-[260] [&>*]:pointer-events-auto"
+        />
+        <DevViewportHint />
       </body>
     </html>
   );
