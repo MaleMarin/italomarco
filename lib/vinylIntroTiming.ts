@@ -1,16 +1,22 @@
 /**
  * Única fuente de tiempos del intro de vinilo (`VinylMorph`).
  * `VinylHome` debe derivar su timeout de aquí; si no, los cambios en el canvas no coinciden con el desmontaje.
+ *
+ * Objetivo: ~`INTRO_TOTAL_MS` desde t=0 hasta fin del velo (morph + hold + fade).
  */
 
+/** Referencia ~4,64 s (morph + hold + fade); ver `vinylIntroFinishElapsedMs`. */
+export const INTRO_TOTAL_MS = 4650;
+
 export const VINYL_TIMING = {
-  T_DISK: 2100,
-  T_MORPH: 2700,
-  T_HOLD: 1500,
-  T_FADE: 3800,
+  T_DISK: 920,
+  T_MORPH: 1980,
+  T_HOLD: 560,
+  T_FADE: 1380,
 } as const;
 
-const SPIN_FACTOR = 0.93;
+/** Más alto = `tSpinEff` mayor = ω menor = plato visualmente más lento. */
+const SPIN_FACTOR = 0.985;
 
 /** ms hasta `morphEndEff + tHold + tFade` (fin natural del loop). */
 export function vinylIntroFinishElapsedMs(prefersReducedMotion: boolean): number {
@@ -32,11 +38,11 @@ export type VinylResolvedTimeline = {
 export function vinylResolvedTimeline(
   prefersReducedMotion: boolean,
 ): VinylResolvedTimeline {
-  const tDisk = prefersReducedMotion ? 1200 : VINYL_TIMING.T_DISK;
-  const tMorph = prefersReducedMotion ? 1400 : VINYL_TIMING.T_MORPH;
-  const tHold = prefersReducedMotion ? 480 : VINYL_TIMING.T_HOLD;
+  const tDisk = prefersReducedMotion ? 720 : VINYL_TIMING.T_DISK;
+  const tMorph = prefersReducedMotion ? 1200 : VINYL_TIMING.T_MORPH;
+  const tHold = prefersReducedMotion ? 400 : VINYL_TIMING.T_HOLD;
   const tFade = prefersReducedMotion ? 700 : VINYL_TIMING.T_FADE;
-  const morphStartFrac = prefersReducedMotion ? 0.38 : 0.28;
+  const morphStartFrac = prefersReducedMotion ? 0.32 : 0.27;
   const tSpinEff =
     Math.max(tDisk, tMorph / (1 - morphStartFrac)) * SPIN_FACTOR;
   const morphStart = tSpinEff * morphStartFrac;

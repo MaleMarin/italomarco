@@ -19,8 +19,8 @@ const PHRASE_SUB_LINE = "No capturo sonido.";
 /** Segunda frase en dos palabras grandes (debajo). */
 const PHRASE_HERO_WORDS = ["Traduzco", "intenciones."] as const;
 
-/** Color de la frase (RGB); contraste sobre #020202. */
-const LETTER_ACCENT = "90, 150, 255";
+/** Azul eléctrico (#0052FF) — frase con presencia, entrada/salida suaves en el loop. */
+const LETTER_ACCENT = "0, 82, 255";
 
 /**
  * Misma voz tipográfica que `wordStyle` en WhatIBuild (p. ej. “PRODUCCIÓN.”):
@@ -113,7 +113,7 @@ export default function VinylMorph({
       morphEndEff,
     } = vinylResolvedTimeline(prefersReducedMotion);
     /** Deriva temporal de la onda dentro del sector derecho (sin(14θ+φ)). */
-    const RIPPLE_DRIFT_PER_MS = 0.00032;
+    const RIPPLE_DRIFT_PER_MS = 0.00024;
     const failsafeMs = vinylCanvasFailsafeMs(prefersReducedMotion, 4500, 20000);
     failsafeTimer = window.setTimeout(() => finishIntro(), failsafeMs);
 
@@ -437,13 +437,13 @@ export default function VinylMorph({
       const baseA = Math.min(1, opacity);
       ctx.textAlign = "left";
       ctx.textBaseline = "middle";
-      ctx.fillStyle = `rgba(${LETTER_ACCENT}, 0.96)`;
+      ctx.fillStyle = `rgba(${LETTER_ACCENT}, 0.93)`;
 
       const subWe = fadeLine1;
       if (subWe > 0.02) {
-        const drop = (1 - subWe) * (m.subFontPx * 0.14);
+        const drop = (1 - subWe) * (m.subFontPx * 0.09);
         ctx.save();
-        ctx.globalAlpha = baseA * subWe * 0.92;
+        ctx.globalAlpha = baseA * subWe * 0.88;
         ctx.font = `${PHRASE_WEIGHT_PRIMARY} ${m.subFontPx}px ${PHRASE_FONT_STACK}`;
         ctx.letterSpacing = phraseLetterSpacingPx(m.subFontPx);
         ctx.fillText(PHRASE_SUB_LINE, m.subX, m.subY + drop);
@@ -453,7 +453,7 @@ export default function VinylMorph({
       for (let i = 0; i < PHRASE_HERO_WORDS.length; i++) {
         const we = heroWordFade(fadeLine2, i);
         if (we < 0.015) continue;
-        const drop = (1 - we) * (m.heroFontPx * 0.055);
+        const drop = (1 - we) * (m.heroFontPx * 0.034);
         const wx = m.heroWordX[i];
         const wy = m.heroY + drop;
         ctx.save();
@@ -493,7 +493,8 @@ export default function VinylMorph({
          * tSpinEff solo define cuánto tarda una vuelta “de referencia”; el ángulo sigue el tiempo real sin tope.
          */
         const omega0 = TWO_PI / tSpinEff;
-        const diskRot = DISK_PHASE0 + el * omega0;
+        /** Giro un ~12 % más lento que el reloj del morph (solo lectura visual). */
+        const diskRot = DISK_PHASE0 + el * omega0 * 0.88;
         /**
          * Solo deriva en t: si ripplePhase incluye diskRot, sin(14θ+φ) evoluciona en el marco local
          * mientras ctx.rotate(diskRot) ya gira el trazo → doble fase y tirones visibles (sobre todo
@@ -501,10 +502,7 @@ export default function VinylMorph({
          */
         const ripplePhase = el * RIPPLE_DRIFT_PER_MS;
 
-        const nameIntroRaw = Math.min(
-          1,
-          el / Math.max(320, tDisk * 0.2),
-        );
+        const nameIntroRaw = Math.min(1, el / 160);
         const nameIntro = smootherstep01(nameIntroRaw);
 
         if (el < morphStart) {
@@ -547,33 +545,49 @@ export default function VinylMorph({
           );
 
           const appearElapsed = Math.max(0, el - morphStart);
-          /** Entrada muy suave: rampa larga en ms reales. */
-          const appearMs = Math.min(900, Math.max(260, tMorph * 0.48));
+          /** Rampa larga: la frase tarda más en “aterrizar”. */
+          const appearMs = Math.min(1200, Math.max(480, tMorph * 0.64));
           const appearRaw = Math.min(1, appearElapsed / appearMs);
-          const appear = smootherstep01(smootherstep01(appearRaw));
+          const appear = smootherstep01(
+            smootherstep01(smootherstep01(smootherstep01(appearRaw))),
+          );
 
+          /** Ventana más ancha y temprana → subida de brillo más gradual. */
           const textRevealRaw = Math.max(
             0,
-            Math.min(1, (mpDiss - 0.44) / 0.5),
+            Math.min(1, (mpDiss - 0.26) / 0.62),
           );
-          const textReveal = smootherstep01(smootherstep01(textRevealRaw));
+          const textReveal = smootherstep01(
+            smootherstep01(smootherstep01(smootherstep01(textRevealRaw))),
+          );
+          /** Pico 0.94 alineado con hold/fade (sin salto de brillo al cambiar de rama). */
           const underlayA =
-            (0.12 + morphGlobalP * 0.28) * appear * textReveal;
+            (0.12 + morphGlobalP * 0.82) * appear * textReveal;
           const maxG = H * 0.5 + 8;
           const animC = textReveal * appear;
           const open = prefersReducedMotion
             ? 1
-            : smootherstep01(smootherstep01(animC));
+            : smootherstep01(
+                smootherstep01(smootherstep01(animC)),
+              );
           const splitGapPx = open * maxG;
-          /** 1ª línea ~1,2 s; 2ª ~1,4 s después, ambas con quintic suave. */
-          const seqT = Math.max(0, appearElapsed - tMorph * 0.04);
+          const seqT = Math.max(0, appearElapsed - tMorph * 0.06);
           const fade1 = prefersReducedMotion
             ? animC
-            : animC * smootherstep01(smootherstep01(seqT / 1200));
+            : animC *
+                smootherstep01(
+                  smootherstep01(
+                    seqT / Math.max(380, tMorph * 0.68),
+                  ),
+                );
           const fade2 = prefersReducedMotion
             ? animC
             : animC *
-              smootherstep01(smootherstep01((seqT - 780) / 1450));
+                smootherstep01(
+                  smootherstep01(
+                    (seqT - tMorph * 0.44) / Math.max(420, tMorph * 0.74),
+                  ),
+                );
           drawPhraseReveal(underlayA, splitGapPx, fade1, fade2);
         } else if (el < morphEndEff + tHold) {
           applyNameFrame(
@@ -585,14 +599,19 @@ export default function VinylMorph({
         } else {
           const raw = Math.min(1, Math.max(0, (el - morphEndEff - tHold) / tFade));
           /**
-           * Una sola curva para todo el cierre: coseno sobre tiempo suavizado (sin cortes).
-           * Texto canvas, velo negro y «Italo Marco» usan el mismo `fadeOut` / `u`.
+           * Salida muy suave: ease extra + potencia suave en la opacidad del texto
+           * para que la frase se desvanezca sin corte brusco frente al velo.
            */
-          const s = smootherstep01(smootherstep01(raw));
+          const s = smootherstep01(
+            smootherstep01(smootherstep01(smootherstep01(raw))),
+          );
           const u = 0.5 - 0.5 * Math.cos(Math.PI * s);
-          const fadeOut = 1 - u;
+          const linearFade = 1 - u;
+          const fadeOut = Math.pow(Math.max(0, linearFade), 0.72);
+          const nameOpacity =
+            fadeOut > 0.58 ? 1 : smootherstep01(fadeOut / 0.58);
           applyNameFrame(
-            fadeOut,
+            nameOpacity,
             layout.nameShiftTarget,
             layout.nameBelowPhraseY,
           );

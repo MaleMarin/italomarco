@@ -1,268 +1,468 @@
 "use client";
+import { useRef, useEffect, useState } from "react";
+import { motion, useInView, AnimatePresence } from "framer-motion";
 
-import { useRef } from "react";
-import { motion, useInView } from "framer-motion";
-import { cn } from "@/lib/cn";
+// ─── Data ─────────────────────────────────────────────────────────────────────
 
-const ease = [0.22, 1, 0.36, 1] as const;
-
-const MAIL = "hola@italomarco.com";
-
-type ServiceItem = { title: string; description: string };
-
-type ServiceSectionConfig = {
-  id: string;
-  heading: string;
-  tagline: string;
-  accentTitle: string;
-  accentLine: string;
-  accentGlow: string;
-  accentGlowMid: string;
-  buttonHover: string;
-  items: ServiceItem[];
-  mailSubject: string;
-};
-
-const SECTIONS: ServiceSectionConfig[] = [
+const SECTIONS = [
   {
-    id: "servicios-01",
-    heading: "Producción",
-    tagline: "Del concepto al master. Beats, arreglos y dirección sonora de punta a punta.",
-    accentTitle: "#0052FF",
-    accentLine: "rgba(0, 82, 255, 0.5)",
-    accentGlow: "rgba(0, 82, 255, 0.11)",
-    accentGlowMid: "rgba(0, 50, 160, 0.06)",
-    buttonHover: "rgba(0, 82, 255, 0.15)",
-    mailSubject: "Cotización — Producción",
-    items: [
+    id: "produccion",
+    word: "Producción.",
+    number: "01",
+    tagline: "Del concepto al master.",
+    color: "#0052FF",
+    services: [
       {
-        title: "Producción musical",
-        description:
-          "Del concepto al master. Beats, arreglos, mezcla y dirección sonora completa.",
+        track: "01",
+        name: "Producción musical completa",
+        desc: "Beats, arreglos, instrumentación y dirección sonora de principio a fin.",
       },
       {
-        title: "Ghost production",
-        description: "Produzco bajo tu nombre. 100% confidencial.",
+        track: "02",
+        name: "Ghost production",
+        desc: "Produzco bajo tu nombre. Proceso 100% confidencial.",
+        tag: "CONFIDENCIAL",
       },
       {
-        title: "Live sessions",
-        description:
-          "Captura y mezcla de sesiones en vivo para bandas emergentes.",
+        track: "03",
+        name: "Sample packs",
+        desc: "Sonidos únicos grabados en estudio. Listos para tu próxima producción.",
+        tag: "PRÓXIMAMENTE",
       },
     ],
   },
   {
-    id: "servicios-02",
-    heading: "Mezcla",
-    tagline: "Claridad, profundidad y loudness listos para plataformas y club.",
-    accentTitle: "#4d8CFF",
-    accentLine: "rgba(100, 160, 255, 0.55)",
-    accentGlow: "rgba(80, 140, 255, 0.1)",
-    accentGlowMid: "rgba(40, 90, 200, 0.05)",
-    buttonHover: "rgba(100, 160, 255, 0.18)",
-    mailSubject: "Cotización — Mezcla",
-    items: [
+    id: "mezcla",
+    word: "Mezcla.",
+    number: "02",
+    tagline: "Tu track, elevado.",
+    color: "#008CFF",
+    services: [
       {
-        title: "Mezcla y masterización",
-        description:
-          "Tu track, elevado. Claridad, profundidad y volumen de release.",
+        track: "01",
+        name: "Mezcla de tracks",
+        desc: "Claridad, profundidad y balance. Cada elemento en su lugar exacto.",
       },
       {
-        title: "Master final y QC",
-        description:
-          "Último paso antes del release: loudness, stems y control de fase.",
+        track: "02",
+        name: "Masterización",
+        desc: "Volumen y brillo de release profesional. Listo para Spotify, Apple Music y más.",
       },
     ],
   },
   {
-    id: "servicios-03",
-    heading: "Identidad",
-    tagline: "Sonido que ancla marca, artista o proyecto con una firma reconocible.",
-    accentTitle: "#7B6CFF",
-    accentLine: "rgba(140, 120, 255, 0.5)",
-    accentGlow: "rgba(110, 90, 255, 0.1)",
-    accentGlowMid: "rgba(70, 50, 200, 0.055)",
-    buttonHover: "rgba(130, 110, 255, 0.2)",
-    mailSubject: "Cotización — Identidad",
-    items: [
+    id: "identidad",
+    word: "Identidad.",
+    number: "03",
+    tagline: "El sonido que te define.",
+    color: "#5C3CFF",
+    services: [
       {
-        title: "Audio logos",
-        description: "Identidad sonora para marcas y creadores.",
+        track: "01",
+        name: "Identidad sonora para artistas",
+        desc: "Construimos el universo sonoro que hace reconocible tu nombre.",
       },
       {
-        title: "Sample packs",
-        description:
-          "Sonidos únicos grabados en estudio. Listos para tu próxima producción.",
+        track: "02",
+        name: "Audio logos",
+        desc: "Tu marca en 3 segundos. Diseño sonoro para marcas y creadores.",
       },
       {
-        title: "Dirección sonora de marca",
-        description:
-          "Guías de uso, paleta sónica y coherencia en todos los touchpoints.",
+        track: "03",
+        name: "Live sessions",
+        desc: "Captura y mezcla de sesiones en vivo para bandas emergentes.",
       },
     ],
   },
-];
+] as const;
 
-function ServiceRow({
-  item,
-  index,
-  accentLine,
-  showDivider,
-}: {
-  item: ServiceItem;
-  index: number;
-  accentLine: string;
-  showDivider: boolean;
-}) {
+type Section = (typeof SECTIONS)[number];
+type TrackService = Section["services"][number];
+
+// ─── Waveform ─────────────────────────────────────────────────────────────────
+
+function Waveform({ color, active }: { color: string; active: boolean }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const timeRef = useRef(0);
+  const barsRef = useRef<number[]>(
+    Array.from({ length: 28 }, () => 0.15 + Math.random() * 0.85),
+  );
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let raf = 0;
+    let alive = true;
+
+    const W = canvas.width;
+    const H = canvas.height;
+    const bars = barsRef.current;
+    const BAR_W = 3;
+    const GAP = 2;
+
+    const draw = () => {
+      if (!alive) return;
+      ctx.clearRect(0, 0, W, H);
+      bars.forEach((h, i) => {
+        const animated = active
+          ? h * (0.4 + 0.6 * Math.abs(Math.sin(timeRef.current * 2.2 + i * 0.55)))
+          : h * 0.18;
+        const barH = Math.max(2, animated * H);
+        const x = i * (BAR_W + GAP);
+        const y = (H - barH) / 2;
+        const alpha = active ? 0.7 + 0.3 * animated : 0.2;
+        const aByte = Math.round(Math.min(1, Math.max(0, alpha)) * 255)
+          .toString(16)
+          .padStart(2, "0");
+        ctx.fillStyle = active ? `${color}${aByte}` : "rgba(255,255,255,0.15)";
+        ctx.beginPath();
+        const r = 1.5;
+        if (typeof ctx.roundRect === "function") {
+          ctx.roundRect(x, y, BAR_W, barH, r);
+        } else {
+          ctx.rect(x, y, BAR_W, barH);
+        }
+        ctx.fill();
+      });
+      if (active) timeRef.current += 0.035;
+      raf = requestAnimationFrame(draw);
+    };
+
+    raf = requestAnimationFrame(draw);
+    return () => {
+      alive = false;
+      cancelAnimationFrame(raf);
+    };
+  }, [active, color]);
+
   return (
-    <li className="relative list-none">
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-6% 0px -2% 0px" }}
-        transition={{ duration: 0.55, ease, delay: index * 0.1 }}
-      >
-        <h3
-          className="m-0 font-sans font-light text-[rgba(255,255,255,0.92)]"
-          style={{ fontSize: "clamp(1.15rem, 2.2vw, 1.35rem)" }}
-        >
-          {item.title}
-        </h3>
-        <p
-          className="m-0 mt-2 max-w-xl font-sans font-extralight leading-relaxed text-white/45"
-          style={{ fontSize: "14px" }}
-        >
-          {item.description}
-        </p>
-        {showDivider ? (
-          <div
-            className="mt-8 h-px w-full overflow-hidden rounded-full md:mt-10"
-            aria-hidden
-          >
-            <motion.div
-              className="h-full w-full origin-left"
-              style={{ backgroundColor: accentLine }}
-              initial={{ scaleX: 0 }}
-              whileInView={{ scaleX: 1 }}
-              viewport={{ once: true, margin: "-4% 0px" }}
-              transition={{
-                duration: 0.85,
-                ease,
-                delay: 0.12 + index * 0.11,
-              }}
-            />
-          </div>
-        ) : (
-          <div className="h-6 md:h-8" aria-hidden />
-        )}
-      </motion.div>
-    </li>
+    <canvas
+      ref={canvasRef}
+      width={28 * (3 + 2) - 2}
+      height={32}
+      style={{ display: "block" }}
+    />
   );
 }
 
-function ServiceSectionBlock({ config }: { config: ServiceSectionConfig }) {
-  const ref = useRef<HTMLElement>(null);
-  const headInView = useInView(ref, {
-    once: true,
-    margin: "-10% 0px -14% 0px",
-    amount: 0.15,
-  });
+// ─── Track Row ────────────────────────────────────────────────────────────────
 
-  const mailHref = `mailto:${MAIL}?subject=${encodeURIComponent(config.mailSubject)}`;
+function TrackRow({
+  service,
+  index,
+  color,
+  parentInView,
+}: {
+  service: TrackService;
+  index: number;
+  color: string;
+  parentInView: boolean;
+}) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -16 }}
+      animate={parentInView ? { opacity: 1, x: 0 } : {}}
+      transition={{
+        duration: 0.6,
+        ease: [0.16, 1, 0.3, 1],
+        delay: 0.25 + index * 0.1,
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "16px",
+        padding: "18px 16px",
+        borderRadius: "10px",
+        cursor: "default",
+        transition: "background 0.3s ease",
+        background: hovered ? "rgba(255,255,255,0.04)" : "transparent",
+        marginBottom: "4px",
+      }}
+    >
+      <span
+        style={{
+          fontFamily: '"DM Sans", ui-monospace, monospace',
+          fontWeight: 200,
+          fontSize: "11px",
+          color: hovered ? color : "rgba(255,255,255,0.2)",
+          letterSpacing: "0.1em",
+          minWidth: "20px",
+          transition: "color 0.3s",
+        }}
+      >
+        {service.track}
+      </span>
+
+      <div
+        style={{
+          width: "22px",
+          height: "22px",
+          borderRadius: "50%",
+          border: `1px solid ${hovered ? color : "rgba(255,255,255,0.15)"}`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+          transition: "border-color 0.3s, background 0.3s",
+          background: hovered ? `${color}22` : "transparent",
+        }}
+      >
+        <div
+          style={{
+            width: 0,
+            height: 0,
+            borderTop: "4px solid transparent",
+            borderBottom: "4px solid transparent",
+            borderLeft: `6px solid ${hovered ? color : "rgba(255,255,255,0.3)"}`,
+            marginLeft: "2px",
+            transition: "border-left-color 0.3s",
+          }}
+        />
+      </div>
+
+      <div style={{ flexShrink: 0 }}>
+        <Waveform color={color} active={hovered} />
+      </div>
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            marginBottom: "3px",
+          }}
+        >
+          <span
+            style={{
+              fontFamily: '"DM Sans", sans-serif',
+              fontWeight: 300,
+              fontSize: "clamp(14px, 1.6vw, 18px)",
+              color: hovered ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.7)",
+              letterSpacing: "-0.01em",
+              transition: "color 0.3s",
+            }}
+          >
+            {service.name}
+          </span>
+          {"tag" in service && service.tag ? (
+            <span
+              style={{
+                fontFamily: '"DM Sans", sans-serif',
+                fontWeight: 200,
+                fontSize: "9px",
+                letterSpacing: "0.15em",
+                color: hovered ? color : "rgba(255,255,255,0.25)",
+                border: `0.5px solid ${hovered ? color : "rgba(255,255,255,0.15)"}`,
+                borderRadius: "20px",
+                padding: "2px 7px",
+                textTransform: "uppercase",
+                transition: "color 0.3s, border-color 0.3s",
+                flexShrink: 0,
+              }}
+            >
+              {service.tag}
+            </span>
+          ) : null}
+        </div>
+        <AnimatePresence initial={false}>
+          {hovered && (
+            <motion.p
+              key="desc"
+              initial={{ opacity: 0, height: 0, y: -6 }}
+              animate={{ opacity: 1, height: "auto", y: 0 }}
+              exit={{ opacity: 0, height: 0, y: -4 }}
+              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+              style={{
+                fontFamily: '"DM Sans", sans-serif',
+                fontWeight: 200,
+                fontSize: "12px",
+                color: "rgba(255,255,255,0.35)",
+                letterSpacing: "0.02em",
+                lineHeight: 1.6,
+                margin: 0,
+                overflow: "hidden",
+              }}
+            >
+              {service.desc}
+            </motion.p>
+          )}
+        </AnimatePresence>
+      </div>
+
+      <AnimatePresence initial={false}>
+        {hovered && (
+          <motion.a
+            key="cta"
+            href="mailto:hola@italomarco.com"
+            initial={{ opacity: 0, x: 8 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 8 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              fontFamily: '"DM Sans", sans-serif',
+              fontWeight: 200,
+              fontSize: "11px",
+              letterSpacing: "0.15em",
+              color: color,
+              textDecoration: "none",
+              textTransform: "uppercase",
+              flexShrink: 0,
+              whiteSpace: "nowrap",
+            }}
+          >
+            Cotizar →
+          </motion.a>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+// ─── Section ──────────────────────────────────────────────────────────────────
+
+function ServiceSection({ section }: { section: Section }) {
+  const ref = useRef<HTMLElement>(null);
+  const inView = useInView(ref, {
+    once: true,
+    margin: "0px 0px -10% 0px",
+  });
 
   return (
     <section
-      id={config.id}
+      id={section.id}
       ref={ref}
-      aria-labelledby={`${config.id}-heading`}
-      className={cn(
-        "relative scroll-mt-[5.5rem] border-b border-white/[0.06] md:scroll-mt-24",
-      )}
       style={{
-        fontFamily: 'var(--font-sans), "DM Sans", sans-serif',
-        padding: "clamp(4.5rem, 14vh, 8rem) clamp(1.25rem, 5vw, 2.5rem)",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        padding: "15vh 0",
+        position: "relative",
+        scrollMarginTop: "80px",
       }}
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10"
         style={{
-          background: `radial-gradient(ellipse 85% 55% at 18% 20%, ${config.accentGlow} 0%, transparent 55%),
-            radial-gradient(ellipse 70% 50% at 88% 75%, ${config.accentGlowMid} 0%, transparent 50%)`,
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          background: `radial-gradient(ellipse 55% 45% at 50% 50%, ${section.color}18 0%, transparent 100%)`,
         }}
       />
 
-      <div className="mx-auto w-full max-w-[640px]">
-        <motion.h2
-          id={`${config.id}-heading`}
-          className="m-0 font-sans font-extralight tracking-tight"
+      <div
+        style={{
+          maxWidth: "860px",
+          width: "100%",
+          margin: "0 auto",
+          padding: "0 6vw",
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
+        <div style={{ marginBottom: "48px" }}>
+          <motion.span
+            initial={{ opacity: 0 }}
+            animate={inView ? { opacity: 1 } : {}}
+            transition={{ duration: 0.5 }}
+            style={{
+              fontFamily: '"DM Sans", sans-serif',
+              fontWeight: 200,
+              fontSize: "11px",
+              letterSpacing: "0.3em",
+              color: "rgba(255,255,255,0.2)",
+              textTransform: "uppercase",
+              display: "block",
+              marginBottom: "12px",
+            }}
+          >
+            {section.number}
+          </motion.span>
+
+          <motion.h2
+            initial={{ opacity: 0, y: 12 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
+            transition={{
+              duration: 0.7,
+              ease: [0.16, 1, 0.3, 1],
+              delay: 0.08,
+            }}
+            style={{
+              fontFamily: '"DM Sans", sans-serif',
+              fontWeight: 100,
+              fontSize: "clamp(40px, 6vw, 80px)",
+              letterSpacing: "-0.02em",
+              lineHeight: 1,
+              color: "rgba(255,255,255,0.92)",
+              margin: "0 0 10px",
+            }}
+          >
+            {section.word}
+          </motion.h2>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={inView ? { opacity: 1 } : {}}
+            transition={{ duration: 0.5, delay: 0.15 }}
+            style={{
+              fontFamily: '"DM Sans", sans-serif',
+              fontWeight: 200,
+              fontSize: "13px",
+              color: "rgba(255,255,255,0.28)",
+              letterSpacing: "0.06em",
+              margin: 0,
+            }}
+          >
+            {section.tagline}
+          </motion.p>
+        </div>
+
+        <motion.div
+          initial={{ scaleX: 0 }}
+          animate={inView ? { scaleX: 1 } : {}}
+          transition={{
+            duration: 0.7,
+            ease: [0.16, 1, 0.3, 1],
+            delay: 0.2,
+          }}
           style={{
-            fontSize: "clamp(2rem, 6vw, 3rem)",
-            color: config.accentTitle,
-            textShadow: `0 0 42px ${config.accentGlow}`,
+            height: "0.5px",
+            background: `linear-gradient(90deg, ${section.color}99 0%, transparent 70%)`,
+            marginBottom: "8px",
+            transformOrigin: "left",
           }}
-          initial={{ opacity: 0, y: 22 }}
-          animate={
-            headInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 22 }
-          }
-          transition={{ duration: 0.65, ease }}
-        >
-          {config.heading}
-        </motion.h2>
+        />
 
-        <motion.p
-          className="m-0 mt-4 font-sans font-extralight leading-relaxed text-white/50"
-          style={{ fontSize: "15px", maxWidth: "36rem" }}
-          initial={{ opacity: 0, y: 16 }}
-          animate={
-            headInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }
-          }
-          transition={{ duration: 0.6, ease, delay: 0.1 }}
-        >
-          {config.tagline}
-        </motion.p>
-
-        <ul className="m-0 mt-12 p-0">
-          {config.items.map((item, i) => (
-            <ServiceRow
-              key={item.title}
-              item={item}
-              index={i}
-              accentLine={config.accentLine}
-              showDivider={i < config.items.length - 1}
-            />
-          ))}
-        </ul>
-
-        <motion.a
-          href={mailHref}
-          className="mt-4 inline-flex items-center gap-2 border border-white/[0.12] px-5 py-3 font-sans text-[11px] font-medium uppercase tracking-[0.2em] text-white/80 transition-colors"
-          style={{ borderRadius: "2px" }}
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-8% 0px" }}
-          transition={{ duration: 0.55, ease, delay: 0.15 }}
-          whileHover={{
-            backgroundColor: config.buttonHover,
-            borderColor: "rgba(255,255,255,0.2)",
-            color: "rgba(255,255,255,0.95)",
-          }}
-        >
-          Cotizar
-          <span aria-hidden className="text-white/50">
-            →
-          </span>
-        </motion.a>
+        {section.services.map((s, i) => (
+          <TrackRow
+            key={s.name}
+            service={s}
+            index={i}
+            color={section.color}
+            parentInView={inView}
+          />
+        ))}
       </div>
     </section>
   );
 }
 
+// ─── Export ───────────────────────────────────────────────────────────────────
+
 export default function Services() {
   return (
-    <div id="servicios" className="relative z-10 bg-[#020202]">
-      {SECTIONS.map((config) => (
-        <ServiceSectionBlock key={config.id} config={config} />
+    <div className="relative z-10 bg-[#020202]">
+      {SECTIONS.map((s) => (
+        <ServiceSection key={s.id} section={s} />
       ))}
     </div>
   );
