@@ -1,11 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useHeaderIntro } from "@/components/Providers";
-import WhatIBuild from "@/components/sections/WhatIBuild";
-import Services from "@/components/sections/Services";
-import Contact from "@/components/sections/Contact";
 
 import {
   motion,
@@ -37,8 +35,8 @@ const VinylMorph = dynamic(() => import("@/components/VinylMorph"), {
   ),
 });
 
-/** Contenido completo de la ruta `/`: intro de vinilo + landing. */
-export default function VinylHome() {
+/** Shell de la ruta `/`: intro de vinilo, parallax y pie; el cuerpo lo compone `app/page.tsx`. */
+export default function VinylHome({ children }: { children: ReactNode }) {
   const [hideVinyl, setHideVinyl] = useState(false);
   const { setHomeIntroComplete } = useHeaderIntro();
   const introNotifiedRef = useRef(false);
@@ -114,32 +112,33 @@ export default function VinylHome() {
         color: "#F9F9F9",
       }}
     >
-      <div className="relative z-[5] w-full overflow-x-hidden">
+      <div className="relative z-[5] w-full">
+        {/*
+          Parallax solo en fondos (capa absolute). El texto vivía dentro de un motion.div con
+          transform(x,y): en algunos motores el margen del hijo no “tira” del layout como toca.
+        */}
         <motion.div
-          className="relative flex min-h-[calc(100dvh-3.5rem)] flex-col md:min-h-[calc(100dvh-4rem)]"
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
           style={{ x: driftX, y: driftY }}
         >
           <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 z-0"
+            className="absolute inset-0"
             style={{
               background:
                 "radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 38%), #7a7f8c 0%, #5c616e 14%, #3d424f 32%, #22262f 56%, #101216 78%, #020202 100%)",
             }}
           />
-
           <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 z-[1]"
+            className="absolute inset-0"
             style={{
               background:
                 "radial-gradient(ellipse 95% 85% at 50% 45%, transparent 25%, rgba(2,2,2,0.5) 85%, #020202 100%)",
             }}
           />
-
           <motion.div
             aria-hidden
-            className="pointer-events-none absolute inset-0 z-[2] opacity-[0.07] mix-blend-soft-light"
+            className="absolute inset-0 opacity-[0.07] mix-blend-soft-light"
             style={{
               backgroundImage: `url("${noiseSvg}")`,
               backgroundRepeat: "repeat",
@@ -154,45 +153,38 @@ export default function VinylHome() {
               reduce ? undefined : { duration: 18, repeat: Infinity, ease: "linear" }
             }
           />
-
-          <div
-            className="relative z-10 flex min-h-[min(18dvh,140px)] shrink-0 flex-col justify-center px-5 pb-4 pt-8 md:px-10 md:pt-10"
-            aria-hidden
-          />
-
-          <WhatIBuild />
-          <Services />
-          <Contact />
-
-          <footer
-            className="relative z-10 flex justify-center px-6 pb-10 pt-6 md:pb-12"
-            aria-label="Pilares"
-          >
-            <p className="flex flex-wrap justify-center text-center text-[9px] font-sans uppercase tracking-[0.85em] text-white/40">
-              {FOOTER.split("").map((char, i) => (
-                <motion.span
-                  key={`${char}-${i}`}
-                  className="inline-block"
-                  whileHover={
-                    reduce
-                      ? undefined
-                      : {
-                          y: -4,
-                          color: "rgba(249,249,249,0.75)",
-                          transition: {
-                            type: "spring",
-                            stiffness: 400,
-                            damping: 16,
-                          },
-                        }
-                  }
-                >
-                  {char === " " ? "\u00a0" : char}
-                </motion.span>
-              ))}
-            </p>
-          </footer>
         </motion.div>
+
+        {children}
+
+        <footer
+          className="relative z-10 flex justify-center px-6 pb-10 pt-6 md:pb-12"
+          aria-label="Pilares"
+        >
+          <p className="flex flex-wrap justify-center text-center text-[9px] font-sans uppercase tracking-[0.85em] text-white/40">
+            {FOOTER.split("").map((char, i) => (
+              <motion.span
+                key={`${char}-${i}`}
+                className="inline-block"
+                whileHover={
+                  reduce
+                    ? undefined
+                    : {
+                        y: -4,
+                        color: "rgba(249,249,249,0.75)",
+                        transition: {
+                          type: "spring",
+                          stiffness: 400,
+                          damping: 16,
+                        },
+                      }
+                }
+              >
+                {char === " " ? "\u00a0" : char}
+              </motion.span>
+            ))}
+          </p>
+        </footer>
       </div>
 
       {!hideVinyl ? (
