@@ -3,9 +3,9 @@ import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 
 const WORDS = [
-  { label: "Producción.", href: "#servicios" },
-  { label: "Mezcla.", href: "#servicios" },
-  { label: "Identidad.", href: "#servicios" },
+  { label: "Producción.", href: "#servicios-01" },
+  { label: "Mezcla.", href: "#servicios-02" },
+  { label: "Identidad.", href: "#servicios-03" },
 ] as const;
 
 function Word({
@@ -17,6 +17,8 @@ function Word({
   index: number;
   parentInView: boolean;
 }) {
+  const stem = word.label.endsWith(".") ? word.label.slice(0, -1) : word.label;
+
   return (
     <motion.a
       href={word.href}
@@ -37,8 +39,10 @@ function Word({
         transition: { duration: 0.2 },
       }}
       style={{
-        display: "inline-block",
-        fontFamily: '"DM Sans", "Helvetica Neue", Arial, sans-serif',
+        display: "block",
+        width: "100%",
+        boxSizing: "border-box",
+        fontFamily: 'var(--font-sans), "DM Sans", "Helvetica Neue", Arial, sans-serif',
         fontWeight: 100,
         fontSize: "clamp(64px, 11vw, 152px)",
         letterSpacing: "-0.02em",
@@ -50,7 +54,18 @@ function Word({
         textShadow: "none",
       }}
     >
-      {word.label}
+      {stem}
+      <span
+        style={{
+          fontWeight: 400,
+          fontSize: "0.52em",
+          letterSpacing: 0,
+          marginLeft: "0.06em",
+          verticalAlign: "0.08em",
+        }}
+      >
+        .
+      </span>
     </motion.a>
   );
 }
@@ -69,8 +84,11 @@ export default function WhatIBuild() {
       id="what-i-build"
       ref={ref}
       style={{
+        display: "flex",
+        flexDirection: "column",
         alignItems: "center",
         textAlign: "center",
+        width: "100%",
       }}
     >
       {WORDS.map((w, i) => (
