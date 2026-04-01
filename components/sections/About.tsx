@@ -3,12 +3,6 @@
 import { useRef } from "react";
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
 
-const SOCIAL_LINKS = [
-  { label: "Spotify",   href: "https://open.spotify.com/intl-es/artist/6ZHmI6dQAtHX8h7RO8VcZX?si=vtvgNyE3TEmGHszCAAUPVQ" },
-  { label: "Instagram", href: "https://www.instagram.com/italomarcoo/?hl=es" },
-  { label: "TikTok",    href: "https://www.tiktok.com/@italomarco1?lang=es-419" },
-];
-
 export default function About() {
   const ref = useRef<HTMLElement | null>(null);
   const inView = useInView(ref, { once: true, margin: "-10%" });
@@ -43,15 +37,16 @@ export default function About() {
           zIndex: 0,
         }}
       >
-        {/* Photo — swap src when ready */}
-        <div
+        <img
+          src="/images/italo-marco.png"
+          alt=""
+          aria-hidden
           style={{
             width: "100%",
             height: "100%",
-            backgroundImage: "url('/images/italo-marco.png')",
-            backgroundSize: "cover",
-            backgroundPosition: "center top",
-            filter: "grayscale(100%) brightness(0.25)",
+            objectFit: "cover",
+            objectPosition: "center top",
+            filter: "grayscale(100%) brightness(0.28)",
           }}
         />
       </motion.div>
@@ -132,58 +127,6 @@ export default function About() {
           Produzco desde el instinto.<br />
           Termino desde el oficio.
         </motion.p>
-
-        {/* Divider line */}
-        <motion.div
-          initial={{ scaleX: 0 }}
-          animate={inView ? { scaleX: 1 } : {}}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.4 }}
-          style={{
-            height: "0.5px",
-            background: "rgba(255,255,255,0.12)",
-            margin: "0 auto 40px",
-            maxWidth: "200px",
-            transformOrigin: "center",
-          }}
-        />
-
-        {/* Social links */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={inView ? { opacity: 1 } : {}}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          style={{
-            display: "flex",
-            gap: "32px",
-            justifyContent: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          {SOCIAL_LINKS.map((link) => (
-            <motion.a
-              key={link.label}
-              href={link.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              whileHover={{
-                color: "rgba(255,255,255,0.9)",
-                letterSpacing: "0.25em",
-              }}
-              style={{
-                fontFamily: '"DM Sans", sans-serif',
-                fontWeight: 200,
-                fontSize: "10px",
-                letterSpacing: "0.22em",
-                textTransform: "uppercase",
-                color: "rgba(255,255,255,0.25)",
-                textDecoration: "none",
-                transition: "color 0.3s, letter-spacing 0.3s",
-              }}
-            >
-              {link.label} ↗
-            </motion.a>
-          ))}
-        </motion.div>
       </div>
     </section>
   );
