@@ -2,6 +2,12 @@
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 
+const STATEMENTS = [
+  "Trabajo donde termina la referencia y empieza el riesgo.",
+  "Produzco desde el instinto. Termino desde el oficio.",
+  "El track que necesitas aún no existe. Eso es exactamente el punto de partida.",
+];
+
 export default function About() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, {
@@ -155,41 +161,32 @@ export default function About() {
             <span style={{ color: "rgba(0,100,255,0.9)" }}>24 años. Chile.</span>
           </motion.h2>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={inView ? { opacity: 1 } : {}}
-            transition={{ duration: 0.7, delay: 0.25 }}
-            style={{
-              fontFamily: '"DM Sans", sans-serif',
-              fontWeight: 200,
-              fontSize: "clamp(14px, 1.5vw, 16px)",
-              color: "rgba(255,255,255,0.45)",
-              lineHeight: 1.8,
-              margin: "0 0 20px",
-              letterSpacing: "0.01em",
-            }}
-          >
-            No creo que el sonido se capture. Creo que se construye, capa por capa,
-            hasta que algo que no existía antes empieza a respirar.
-          </motion.p>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={inView ? { opacity: 1 } : {}}
-            transition={{ duration: 0.7, delay: 0.32 }}
-            style={{
-              fontFamily: '"DM Sans", sans-serif',
-              fontWeight: 200,
-              fontSize: "clamp(13px, 1.3vw, 15px)",
-              color: "rgba(255,255,255,0.3)",
-              lineHeight: 1.8,
-              margin: "0 0 40px",
-            }}
-          >
-            Trabajo en el cruce entre producción musical, sound design e identidad
-            sonora. Cada proyecto es una conversación entre lo que el artista siente
-            y lo que el oyente necesita escuchar.
-          </motion.p>
+          {STATEMENTS.map((text, i) => (
+            <motion.p
+              key={text}
+              initial={{ opacity: 0 }}
+              animate={inView ? { opacity: 1 } : {}}
+              transition={{ duration: 0.7, delay: 0.25 + i * 0.07 }}
+              style={{
+                fontFamily: '"DM Sans", sans-serif',
+                fontWeight: 200,
+                fontSize:
+                  i === 0
+                    ? "clamp(14px, 1.5vw, 16px)"
+                    : "clamp(13px, 1.3vw, 15px)",
+                color:
+                  i === 0
+                    ? "rgba(255,255,255,0.45)"
+                    : "rgba(255,255,255,0.3)",
+                lineHeight: 1.8,
+                margin:
+                  i === STATEMENTS.length - 1 ? "0 0 40px" : "0 0 20px",
+                letterSpacing: i === 0 ? "0.01em" : undefined,
+              }}
+            >
+              {text}
+            </motion.p>
+          ))}
 
           <motion.div
             initial={{ opacity: 0 }}
