@@ -1,6 +1,6 @@
 "use client";
-import { useRef } from "react";
-import { motion, useInView } from "framer-motion";
+
+import { motion } from "framer-motion";
 
 const WORDS = [
   { label: "Producción", href: "#produccion" },
@@ -8,21 +8,13 @@ const WORDS = [
   { label: "Identidad", href: "#identidad" },
 ];
 
-function Word({
-  word,
-  index,
-  parentInView,
-}: {
-  word: (typeof WORDS)[number];
-  index: number;
-  parentInView: boolean;
-}) {
+function Word({ word, index }: { word: (typeof WORDS)[number]; index: number }) {
   return (
     <motion.a
       href={word.href}
       aria-label={`${word.label}.`}
       initial={{ opacity: 0, filter: "blur(18px)", y: 24 }}
-      animate={parentInView ? { opacity: 1, filter: "blur(0px)", y: 0 } : {}}
+      animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
       transition={{
         duration: 0.9,
         ease: [0.16, 1, 0.3, 1],
@@ -66,29 +58,24 @@ function Word({
 }
 
 export default function WhatIBuild() {
-  const ref = useRef<HTMLElement>(null);
-  const inView = useInView(ref, {
-    once: true,
-    margin: "0px 0px -15% 0px",
-  });
-
   return (
     <section
       id="what-i-build"
-      ref={ref}
+      className="relative z-[1] scroll-mt-[5.5rem] md:scroll-mt-24"
       style={{
         minHeight: "100vh",
+        flexShrink: 0,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
         gap: "clamp(0.65rem, 2.4vh, 1.5rem)",
-        padding: "5vh 6vw 16vh",
-        position: "relative",
+        /* Espacio bajo el navbar sticky (h-14 / md:h-16) para que el titular no quede tapado */
+        padding: "max(5vh, 4.5rem) 6vw 16vh",
       }}
     >
       {WORDS.map((w, i) => (
-        <Word key={`${w.label}-${w.href}`} word={w} index={i} parentInView={inView} />
+        <Word key={`${w.label}-${w.href}`} word={w} index={i} />
       ))}
     </section>
   );

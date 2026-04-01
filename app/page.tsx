@@ -10,8 +10,8 @@ import Services from "@/components/sections/Services";
 import Contact from "@/components/sections/Contact";
 
 /**
- * Home = intro de vinilo (`VinylHome` / `VinylMorph`) y, al terminar, las frases (`WhatIBuild`).
- * Después: About, Portfolio, Services, Process, Contact.
+ * Orden: vinilo → hero de las tres palabras grandes (`WhatIBuild`: Producción / Mezcla / Identidad).
+ * Luego servicios (anclas de esas palabras), About, portfolio, proceso, contacto.
  */
 export default function HomePage() {
   return (
@@ -21,9 +21,9 @@ export default function HomePage() {
         initial={false}
       >
         <WhatIBuild />
+        <Services />
         <About />
         <Portfolio />
-        <Services />
         <Process />
         <Contact />
       </motion.div>

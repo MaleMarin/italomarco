@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type TransitionEvent,
+} from "react";
 import {
   vinylCanvasFailsafeMs,
   vinylResolvedTimeline,
@@ -50,12 +56,30 @@ export default function VinylMorph({
   const nameElRef = useRef<HTMLDivElement>(null);
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
-  const [visible, setVisible] = useState(true);
+  /** `active` = loop canvas; `fading` = crossfade CSS antes de desmontar; `off` = ya notificó al padre. */
+  const [layer, setLayer] = useState<"active" | "fading" | "off">("active");
+
+  const onOverlayTransitionEnd = useCallback(
+    (e: TransitionEvent<HTMLDivElement>) => {
+      if (e.target !== e.currentTarget) return;
+      if (e.propertyName !== "opacity") return;
+      setLayer((prev) => {
+        if (prev !== "fading") return prev;
+        queueMicrotask(() => {
+          onCompleteRef.current?.();
+        });
+        return "off";
+      });
+    },
+    [],
+  );
 
   useEffect(() => {
     let mounted = true;
     let introDone = false;
     let failsafeTimer: number | null = null;
+    let rafId = 0;
+    let alive = true;
 
     const finishIntro = () => {
       if (failsafeTimer != null) {
@@ -64,10 +88,16 @@ export default function VinylMorph({
       }
       if (!mounted || introDone) return;
       introDone = true;
-      setVisible(false);
-      window.setTimeout(() => {
-        if (mounted) onCompleteRef.current?.();
-      }, 0);
+      alive = false;
+      cancelAnimationFrame(rafId);
+      if (prefersReducedMotion) {
+        setLayer("off");
+        queueMicrotask(() => {
+          if (mounted) onCompleteRef.current?.();
+        });
+        return;
+      }
+      setLayer("fading");
     };
 
     const canvas = canvasRef.current;
@@ -400,10 +430,19 @@ export default function VinylMorph({
       return x * x * x * (x * (x * 6 - 15) + 10);
     };
 
-    /** Stagger dentro de la segunda frase (Traduzco / intenciones). */
+    /** Ease lento en ambos extremos — evita saltos de jerarquías de smoothstep. */
+    const cosineEase01 = (t: number) => {
+      const x = Math.max(0, Math.min(1, t));
+      return 0.5 - 0.5 * Math.cos(Math.PI * x);
+    };
+
+    /** Stagger muy suave entre palabras hero (sin cortes bruscos). */
     const heroWordFade = (line2Fade: number, index: number) => {
       if (prefersReducedMotion) return line2Fade;
-      return smootherstep01((line2Fade - index * 0.05) / 0.62);
+      const gap = 0.028;
+      return cosineEase01(
+        Math.max(0, Math.min(1, (line2Fade - index * gap) / (1 - gap * 1.15))),
+      );
     };
 
     /**
@@ -467,8 +506,14 @@ export default function VinylMorph({
       ctx.restore();
     };
 
-    let rafId = 0;
-    let alive = true;
+    /** La frase empieza a salir este tiempo antes del fin del hold (misma hora de cierre total). */
+    const FADE_LEAD_MS = 500;
+    const fadeOutStart = Math.max(
+      morphEndEff,
+      morphEndEff + tHold - FADE_LEAD_MS,
+    );
+    const fadeEnd = morphEndEff + tHold + tFade;
+    const fadeOutMs = Math.max(1, fadeEnd - fadeOutStart);
 
     const runLoop = () => {
       const t0 = performance.now();
@@ -479,7 +524,7 @@ export default function VinylMorph({
         try {
         const el = performance.now() - t0;
 
-        if (el >= morphEndEff + tHold + tFade) {
+        if (el >= fadeEnd) {
           alive = false;
           finishIntro();
           return;
@@ -493,8 +538,8 @@ export default function VinylMorph({
          * tSpinEff solo define cuánto tarda una vuelta “de referencia”; el ángulo sigue el tiempo real sin tope.
          */
         const omega0 = TWO_PI / tSpinEff;
-        /** Giro un ~12 % más lento que el reloj del morph (solo lectura visual). */
-        const diskRot = DISK_PHASE0 + el * omega0 * 0.88;
+        /** Giro más lento que el reloj del morph (lectura visual; va acorde a SPIN_FACTOR). */
+        const diskRot = DISK_PHASE0 + el * omega0 * 0.82;
         /**
          * Solo deriva en t: si ripplePhase incluye diskRot, sin(14θ+φ) evoluciona en el marco local
          * mientras ctx.rotate(diskRot) ya gira el trazo → doble fase y tirones visibles (sobre todo
@@ -545,51 +590,37 @@ export default function VinylMorph({
           );
 
           const appearElapsed = Math.max(0, el - morphStart);
-          /** Rampa larga: la frase tarda más en “aterrizar”. */
-          const appearMs = Math.min(1200, Math.max(480, tMorph * 0.64));
-          const appearRaw = Math.min(1, appearElapsed / appearMs);
-          const appear = smootherstep01(
-            smootherstep01(smootherstep01(smootherstep01(appearRaw))),
-          );
-
-          /** Ventana más ancha y temprana → subida de brillo más gradual. */
-          const textRevealRaw = Math.max(
-            0,
-            Math.min(1, (mpDiss - 0.26) / 0.62),
-          );
-          const textReveal = smootherstep01(
-            smootherstep01(smootherstep01(smootherstep01(textRevealRaw))),
-          );
-          /** Pico 0.94 alineado con hold/fade (sin salto de brillo al cambiar de rama). */
-          const underlayA =
-            (0.12 + morphGlobalP * 0.82) * appear * textReveal;
           const maxG = H * 0.5 + 8;
-          const animC = textReveal * appear;
-          const open = prefersReducedMotion
-            ? 1
-            : smootherstep01(
-                smootherstep01(smootherstep01(animC)),
-              );
+          /** Progreso 0→1 a lo largo del morph: una sola curva suave (sin torres de smoothstep). */
+          const uMorph = Math.min(1, appearElapsed / Math.max(1, tMorph * 0.98));
+          const phraseGate = cosineEase01(cosineEase01(uMorph));
+          /** Encaje con la disolución del disco (sin pelear con phraseGate). */
+          const dissGate = cosineEase01(mpDiss);
+          const appear = phraseGate;
+          const textReveal = phraseGate * dissGate;
+          /** Brillo del texto: subida lenta y continua. */
+          const underlayA = (0.1 + morphGlobalP * 0.84) * textReveal;
+          /** Apertura vertical: misma familia de curva que el resto. */
+          const open = prefersReducedMotion ? 1 : cosineEase01(phraseGate * dissGate);
           const splitGapPx = open * maxG;
-          const seqT = Math.max(0, appearElapsed - tMorph * 0.06);
-          const fade1 = prefersReducedMotion
-            ? animC
-            : animC *
-                smootherstep01(
-                  smootherstep01(
-                    seqT / Math.max(380, tMorph * 0.68),
-                  ),
-                );
+          /** Línea chica primero, hero después — solapamiento suave, mismas bases de tiempo. */
+          const uLines = cosineEase01(
+            Math.min(1, appearElapsed / Math.max(520, tMorph * 0.88)),
+          );
+          const fade1 = prefersReducedMotion ? appear : cosineEase01(uLines / 0.52);
           const fade2 = prefersReducedMotion
-            ? animC
-            : animC *
-                smootherstep01(
-                  smootherstep01(
-                    (seqT - tMorph * 0.44) / Math.max(420, tMorph * 0.74),
-                  ),
-                );
-          drawPhraseReveal(underlayA, splitGapPx, fade1, fade2);
-        } else if (el < morphEndEff + tHold) {
+            ? appear
+            : cosineEase01(
+                Math.max(0, uLines - 0.1) / Math.max(0.35, 0.62 - 0.1),
+              );
+
+          /** Últimos instantes del morph: igual que hold → cero salto al cambiar de rama. */
+          if (mp >= 0.992) {
+            drawPhraseReveal(0.94, maxG, 1, 1);
+          } else {
+            drawPhraseReveal(underlayA, splitGapPx, fade1, fade2);
+          }
+        } else if (el < fadeOutStart) {
           applyNameFrame(
             1,
             layout.nameShiftTarget,
@@ -597,32 +628,29 @@ export default function VinylMorph({
           );
           drawPhraseReveal(0.94, H * 0.5 + 8, 1, 1);
         } else {
-          const raw = Math.min(1, Math.max(0, (el - morphEndEff - tHold) / tFade));
-          /**
-           * Salida muy suave: ease extra + potencia suave en la opacidad del texto
-           * para que la frase se desvanezca sin corte brusco frente al velo.
-           */
-          const s = smootherstep01(
-            smootherstep01(smootherstep01(smootherstep01(raw))),
+          const raw = Math.min(
+            1,
+            Math.max(0, (el - fadeOutStart) / fadeOutMs),
           );
-          const u = 0.5 - 0.5 * Math.cos(Math.PI * s);
-          const linearFade = 1 - u;
-          const fadeOut = Math.pow(Math.max(0, linearFade), 0.72);
-          const nameOpacity =
-            fadeOut > 0.58 ? 1 : smootherstep01(fadeOut / 0.58);
+          /**
+           * Salida: una sola ease coseno doble (lento al inicio y al final del fade).
+           * Misma curva para texto y velo negro → sin desincronía ni tirones.
+           */
+          const k = cosineEase01(cosineEase01(raw));
+          const visibility = 1 - k;
           applyNameFrame(
-            nameOpacity,
+            visibility > 0.35 ? 1 : cosineEase01(visibility / 0.35),
             layout.nameShiftTarget,
             layout.nameBelowPhraseY,
           );
           drawPhraseReveal(
-            0.94 * fadeOut,
+            0.94 * visibility,
             H * 0.5 + 8,
-            fadeOut,
-            fadeOut,
+            visibility,
+            visibility,
           );
           ctx.save();
-          ctx.globalAlpha = u;
+          ctx.globalAlpha = k;
           ctx.fillStyle = "#000000";
           ctx.fillRect(0, 0, W, H);
           ctx.restore();
@@ -658,10 +686,11 @@ export default function VinylMorph({
     };
   }, [prefersReducedMotion]);
 
-  if (!visible) return null;
+  if (layer === "off") return null;
 
   return (
     <div
+      onTransitionEnd={onOverlayTransitionEnd}
       style={{
         position: "fixed",
         inset: 0,
@@ -670,6 +699,12 @@ export default function VinylMorph({
         /* Opaco: si es transparente, el clearRect del canvas deja ver WhatIBuild y se mezcla con el vinilo. */
         backgroundColor: "#020202",
         pointerEvents: "auto",
+        opacity: layer === "fading" ? 0 : 1,
+        transition:
+          prefersReducedMotion || layer === "active"
+            ? undefined
+            : "opacity 0.78s cubic-bezier(0.18, 0.82, 0.12, 1)",
+        willChange: layer === "fading" ? "opacity" : undefined,
       }}
     >
       <canvas ref={canvasRef} style={{ display: "block" }} />

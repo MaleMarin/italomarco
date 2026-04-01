@@ -5,18 +5,21 @@
  * Objetivo: ~`INTRO_TOTAL_MS` desde t=0 hasta fin del velo (morph + hold + fade).
  */
 
-/** Referencia ~4,64 s (morph + hold + fade); ver `vinylIntroFinishElapsedMs`. */
-export const INTRO_TOTAL_MS = 4650;
+/** Referencia ~6,7 s (morph + hold + fade); ver `vinylIntroFinishElapsedMs`. */
+export const INTRO_TOTAL_MS = 6720;
 
 export const VINYL_TIMING = {
-  T_DISK: 920,
-  T_MORPH: 1980,
-  T_HOLD: 560,
-  T_FADE: 1380,
+  T_DISK: 1000,
+  /** Más largo = la frase entra con más tiempo de morph. */
+  T_MORPH: 2600,
+  /** Lectura estable antes del fade-out. */
+  T_HOLD: 900,
+  /** Salida de la frase más lenta. */
+  T_FADE: 2200,
 } as const;
 
 /** Más alto = `tSpinEff` mayor = ω menor = plato visualmente más lento. */
-const SPIN_FACTOR = 0.985;
+const SPIN_FACTOR = 1.055;
 
 /** ms hasta `morphEndEff + tHold + tFade` (fin natural del loop). */
 export function vinylIntroFinishElapsedMs(prefersReducedMotion: boolean): number {

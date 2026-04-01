@@ -36,21 +36,19 @@ const VinylMorph = dynamic(() => import("@/components/VinylMorph"), {
 });
 
 /**
- * En `development` el intro se omite para ver HMR/recargas al instante.
- * Forzar intro: `NEXT_PUBLIC_VINYL_INTRO=true npm run dev`
+ * Por defecto el intro del vinilo se muestra en dev y prod.
+ * Para saltarlo (HMR más rápido): `NEXT_PUBLIC_SKIP_VINYL_INTRO=true npm run dev`
  */
-const skipVinylInDev =
-  process.env.NODE_ENV === "development" &&
-  process.env.NEXT_PUBLIC_VINYL_INTRO !== "true";
+const skipVinylIntro = process.env.NEXT_PUBLIC_SKIP_VINYL_INTRO === "true";
 
 /** Shell de la ruta `/`: intro de vinilo, parallax y pie; el cuerpo lo compone `app/page.tsx`. */
 export default function VinylHome({ children }: { children: ReactNode }) {
-  const [hideVinyl, setHideVinyl] = useState(skipVinylInDev);
+  const [hideVinyl, setHideVinyl] = useState(skipVinylIntro);
   const { setHomeIntroComplete } = useHeaderIntro();
   const introNotifiedRef = useRef(false);
 
   useEffect(() => {
-    if (!skipVinylInDev) return;
+    if (!skipVinylIntro) return;
     if (introNotifiedRef.current) return;
     introNotifiedRef.current = true;
     setHomeIntroComplete(true);
