@@ -59,56 +59,22 @@ export default function About() {
             borderRadius: "12px",
             background: "rgba(255,255,255,0.03)",
             border: "0.5px solid rgba(255,255,255,0.08)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            display: "block",
             position: "relative",
             overflow: "hidden",
           }}
         >
-          <div
+          <img
+            src="/images/italo-marco.png"
+            alt="Italo Marco"
             style={{
-              textAlign: "center",
-              color: "rgba(255,255,255,0.15)",
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              objectPosition: "center top",
+              borderRadius: "12px",
             }}
-          >
-            <div
-              style={{
-                width: "64px",
-                height: "64px",
-                borderRadius: "50%",
-                border: "0.5px solid rgba(255,255,255,0.15)",
-                margin: "0 auto 12px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1"
-                aria-hidden
-              >
-                <circle cx="12" cy="8" r="4" />
-                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-              </svg>
-            </div>
-            <span
-              style={{
-                fontFamily: '"DM Sans", sans-serif',
-                fontWeight: 200,
-                fontSize: "10px",
-                letterSpacing: "0.2em",
-                textTransform: "uppercase",
-              }}
-            >
-              Foto próximamente
-            </span>
-          </div>
+          />
 
           <div
             aria-hidden
