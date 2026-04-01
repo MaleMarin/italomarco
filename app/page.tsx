@@ -10,8 +10,7 @@ import Services from "@/components/sections/Services";
 import Contact from "@/components/sections/Contact";
 
 /**
- * Orden: vinilo → hero de las tres palabras grandes (`WhatIBuild`: Producción / Mezcla / Identidad).
- * Luego servicios (anclas de esas palabras), About, portfolio, proceso, contacto.
+ * Orden: WhatIBuild → Portfolio → Services → Process → About → Contact.
  */
 export default function HomePage() {
   return (
@@ -21,10 +20,10 @@ export default function HomePage() {
         initial={false}
       >
         <WhatIBuild />
-        <Services />
-        <About />
         <Portfolio />
+        <Services />
         <Process />
+        <About />
         <Contact />
       </motion.div>
     </VinylHome>
