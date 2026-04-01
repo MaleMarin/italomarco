@@ -48,7 +48,6 @@ export function Navbar() {
 
   const { locale, setLocale } = useLocale();
   const t = useTranslations();
-  const labels = t.nav;
   const [open, setOpen] = useState(false);
   const itemCount = useCartStore((s) => selectCartCount(s.items));
   const toggleCart = useCartStore((s) => s.toggleCart);
@@ -84,22 +83,22 @@ export function Navbar() {
         <ul className="hidden items-center gap-8 md:flex">
           <li>
             <SpringLink href="/proyectos" className={linkClass}>
-              {labels.projects}
+              Escuchar
             </SpringLink>
           </li>
           <li>
             <SpringLink href="/services" className={linkClass}>
-              {labels.services}
+              Construir
             </SpringLink>
           </li>
           <li>
             <SpringLink href="/store" className={linkClass}>
-              {labels.lab}
+              El proceso
             </SpringLink>
           </li>
           <li>
             <SpringLink href="/contact" className={linkClass}>
-              {labels.contact}
+              Escribir
             </SpringLink>
           </li>
         </ul>
@@ -168,7 +167,7 @@ export function Navbar() {
                 className={linkClass}
                 onClick={() => setOpen(false)}
               >
-                {labels.projects}
+                Escuchar
               </SpringLink>
             </li>
             <li>
@@ -177,7 +176,7 @@ export function Navbar() {
                 className={linkClass}
                 onClick={() => setOpen(false)}
               >
-                {labels.services}
+                Construir
               </SpringLink>
             </li>
             <li>
@@ -186,7 +185,7 @@ export function Navbar() {
                 className={linkClass}
                 onClick={() => setOpen(false)}
               >
-                {labels.lab}
+                El proceso
               </SpringLink>
             </li>
             <li>
@@ -195,7 +194,7 @@ export function Navbar() {
                 className={linkClass}
                 onClick={() => setOpen(false)}
               >
-                {labels.contact}
+                Escribir
               </SpringLink>
             </li>
             <li>
