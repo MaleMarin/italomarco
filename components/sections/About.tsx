@@ -3,8 +3,8 @@
 import { useRef } from "react";
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
 
-/** Retrato / dibujo en `public/` (no hay `images/italo-marco.png` en el repo). */
-const ITALO_ILLUSTRATION = "/marco.italo.svg";
+/** Imagen en `public/`; si añades `public/images/italo-marco.png`, cambia la ruta aquí. */
+const ABOUT_PHOTO_SRC = "/marco.italo.svg";
 
 export default function About() {
   const ref = useRef<HTMLElement | null>(null);
@@ -14,85 +14,134 @@ export default function About() {
     target: ref,
     offset: ["start end", "end start"],
   });
-  const photoY = useTransform(scrollYProgress, [0, 1], ["-6%", "6%"]);
+  const photoY = useTransform(scrollYProgress, [0, 1], ["-8%", "8%"]);
 
   return (
     <section
       id="sobre-italo"
       ref={ref}
-      className="relative min-h-[100dvh] scroll-mt-[5.5rem] overflow-hidden bg-[#0a0a0a] md:scroll-mt-24"
+      className="scroll-mt-[5.5rem] md:scroll-mt-24"
+      style={{
+        position: "relative",
+        minHeight: "100vh",
+        overflow: "hidden",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
     >
-      {/* Lectura: columna derecha más oscura; móvil: refuerzo inferior para el copy */}
+      <motion.div
+        style={{
+          position: "absolute",
+          inset: "-10%",
+          y: photoY,
+          zIndex: 0,
+        }}
+      >
+        <img
+          src={ABOUT_PHOTO_SRC}
+          alt=""
+          aria-hidden
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            objectPosition: "center top",
+            filter: "grayscale(100%) brightness(0.28)",
+          }}
+        />
+      </motion.div>
+
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-b from-[#0a0a0a] via-transparent to-[#060606] md:bg-gradient-to-r md:from-transparent md:from-[38%] md:via-[#080808]/92 md:via-[55%] md:to-[#060606]"
+        style={{
+          position: "absolute",
+          inset: 0,
+          zIndex: 1,
+          pointerEvents: "none",
+          background:
+            "linear-gradient(to bottom, rgba(2,2,2,0.5) 0%, rgba(2,2,2,0.3) 50%, rgba(2,2,2,0.7) 100%)",
+        }}
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 z-[1]"
         style={{
+          position: "absolute",
+          inset: 0,
+          zIndex: 1,
+          pointerEvents: "none",
           background:
-            "radial-gradient(ellipse 70% 55% at 78% 42%, rgba(0,52,255,0.07) 0%, transparent 62%)",
+            "radial-gradient(ellipse 60% 50% at 50% 50%, rgba(0,52,255,0.08) 0%, transparent 100%)",
         }}
       />
 
-      <div className="relative z-[2] grid min-h-[100dvh] w-full grid-cols-1 md:grid-cols-2 md:items-center md:gap-8">
-        {/* Ilustración — zona propia, sin tapar con el texto en desktop */}
-        <motion.div
-          className="flex min-h-[38vh] items-end justify-center px-5 pt-24 pb-4 md:min-h-[100dvh] md:items-center md:justify-center md:px-8 md:pb-0 md:pt-0"
-          style={{ y: photoY }}
+      <div
+        style={{
+          position: "relative",
+          zIndex: 2,
+          textAlign: "center",
+          padding: "0 6vw",
+          maxWidth: "700px",
+        }}
+      >
+        <motion.span
+          initial={{ opacity: 0 }}
+          animate={inView ? { opacity: 1 } : {}}
+          transition={{ duration: 0.6 }}
+          style={{
+            fontFamily: '"DM Sans", sans-serif',
+            fontWeight: 200,
+            fontSize: "10px",
+            letterSpacing: "0.4em",
+            textTransform: "uppercase",
+            color: "rgba(255,255,255,0.2)",
+            display: "block",
+            marginBottom: "40px",
+          }}
         >
-          <img
-            src={ITALO_ILLUSTRATION}
-            alt=""
-            aria-hidden
-            className="h-auto w-full max-w-[min(100%,380px)] object-contain object-bottom md:max-h-[min(90vh,920px)] md:max-w-[min(100%,480px)] md:object-center"
-            style={{
-              /* Trazos oscuros del SVG → líneas claras legibles sobre fondo */
-              filter: "grayscale(100%) invert(1) brightness(0.72) contrast(1.05)",
-              opacity: 0.52,
-            }}
-          />
-        </motion.div>
+          El productor
+        </motion.span>
 
-        {/* Copy — al lado del dibujo (md+); debajo en móvil */}
-        <div className="flex flex-col justify-center px-6 pb-16 pt-2 text-center md:px-10 md:pb-20 md:pr-[max(1.5rem,5vw)] md:pt-0 md:text-left">
-          <motion.span
-            initial={{ opacity: 0 }}
-            animate={inView ? { opacity: 1 } : {}}
-            transition={{ duration: 0.6 }}
-            className="mb-8 block font-sans text-[10px] font-extralight uppercase tracking-[0.4em] text-white/25 md:mb-10"
-          >
-            El productor
-          </motion.span>
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+          style={{
+            fontFamily: '"DM Sans", sans-serif',
+            fontWeight: 100,
+            fontSize: "clamp(28px, 4.5vw, 60px)",
+            letterSpacing: "-0.02em",
+            lineHeight: 1.2,
+            color: "rgba(255,255,255,0.92)",
+            margin: "0 0 20px",
+          }}
+        >
+          Trabajo donde termina
+          <br />
+          la referencia y empieza
+          <br />
+          el riesgo.
+        </motion.h2>
 
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
-            className="mb-5 font-sans text-[clamp(28px,4.2vw,56px)] font-thin leading-[1.2] tracking-[-0.02em] text-white/[0.92]"
-          >
-            Trabajo donde termina
-            <br />
-            la referencia y empieza
-            <br />
-            el riesgo.
-          </motion.h2>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={inView ? { opacity: 1 } : {}}
-            transition={{ duration: 0.7, delay: 0.3 }}
-            className="mt-2 max-w-md font-sans text-[clamp(13px,1.35vw,16px)] font-extralight leading-[1.7] tracking-[0.02em] text-white/[0.42] md:mx-0 md:mt-4"
-            style={{
-              textShadow: "0 0 28px rgba(0,0,0,0.85)",
-            }}
-          >
-            Produzco desde el instinto.
-            <br />
-            Termino desde el oficio.
-          </motion.p>
-        </div>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={inView ? { opacity: 1 } : {}}
+          transition={{ duration: 0.7, delay: 0.3 }}
+          style={{
+            fontFamily: '"DM Sans", sans-serif',
+            fontWeight: 200,
+            fontSize: "clamp(13px, 1.4vw, 16px)",
+            color: "rgba(255,255,255,0.36)",
+            lineHeight: 1.7,
+            margin: "0 0 48px",
+            letterSpacing: "0.02em",
+            textShadow: "0 0 40px rgba(0,0,0,0.9), 0 2px 20px rgba(0,0,0,0.75)",
+          }}
+        >
+          Produzco desde el instinto.
+          <br />
+          Termino desde el oficio.
+        </motion.p>
       </div>
     </section>
   );

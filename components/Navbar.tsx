@@ -54,7 +54,7 @@ export function Navbar() {
   const reduce = useReducedMotion();
 
   const linkClass =
-    "font-sans text-[10px] uppercase tracking-widest text-mercury/30 transition-colors hover:text-mercury/55";
+    "font-sans text-[10px] tracking-widest text-mercury/30 transition-colors hover:text-mercury/55";
 
   return (
     <motion.header
@@ -83,22 +83,22 @@ export function Navbar() {
         <ul className="hidden items-center gap-8 md:flex">
           <li>
             <SpringLink href="/proyectos" className={linkClass}>
-              {t.nav.projects}
+              Escuchar
             </SpringLink>
           </li>
           <li>
             <SpringLink href="/services" className={linkClass}>
-              {t.nav.services}
+              Construir
             </SpringLink>
           </li>
           <li>
             <SpringLink href="/store" className={linkClass}>
-              {t.nav.lab}
+              El proceso
             </SpringLink>
           </li>
           <li>
             <SpringLink href="/contact" className={linkClass}>
-              {t.nav.contact}
+              Escribir
             </SpringLink>
           </li>
         </ul>
@@ -167,7 +167,7 @@ export function Navbar() {
                 className={linkClass}
                 onClick={() => setOpen(false)}
               >
-                {t.nav.projects}
+                Escuchar
               </SpringLink>
             </li>
             <li>
@@ -176,7 +176,7 @@ export function Navbar() {
                 className={linkClass}
                 onClick={() => setOpen(false)}
               >
-                {t.nav.services}
+                Construir
               </SpringLink>
             </li>
             <li>
@@ -185,7 +185,7 @@ export function Navbar() {
                 className={linkClass}
                 onClick={() => setOpen(false)}
               >
-                {t.nav.lab}
+                El proceso
               </SpringLink>
             </li>
             <li>
@@ -194,7 +194,7 @@ export function Navbar() {
                 className={linkClass}
                 onClick={() => setOpen(false)}
               >
-                {t.nav.contact}
+                Escribir
               </SpringLink>
             </li>
             <li>
