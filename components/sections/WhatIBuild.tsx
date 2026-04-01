@@ -1,75 +1,79 @@
 "use client";
-
-import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
+import { motion, useInView } from "framer-motion";
 
-const WORDS = ["PRODUCCIÓN.", "MEZCLA.", "IDENTIDAD."] as const;
+const WORDS = [
+  { label: "PRODUCCIÓN.", href: "#servicios" },
+  { label: "MEZCLA.",     href: "#servicios" },
+  { label: "IDENTIDAD.",  href: "#servicios" },
+];
 
-const wordStyle = {
-  fontFamily: 'var(--font-sans), "DM Sans", sans-serif',
-  fontWeight: 100,
-  fontSize: "clamp(72px, 12vw, 160px)",
-  letterSpacing: "-0.02em",
-  lineHeight: 1.05,
-  display: "block",
-  textAlign: "center" as const,
-};
-
-/** Fila alta para que no quepan las tres a la vez: cada useInView dispara al hacer scroll. */
-function BuildWord({ text }: { text: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, {
-    once: true,
-    amount: 0.08,
-    margin: "0px 0px -8% 0px",
-  });
-
+function Word({
+  word,
+  index,
+  parentInView,
+}: {
+  word: (typeof WORDS)[0];
+  index: number;
+  parentInView: boolean;
+}) {
   return (
-    <div
-      ref={ref}
+    <motion.a
+      href={word.href}
+      initial={{ opacity: 0, filter: "blur(18px)", y: 24 }}
+      animate={
+        parentInView
+          ? { opacity: 1, filter: "blur(0px)", y: 0 }
+          : {}
+      }
+      transition={{
+        duration: 0.9,
+        ease: [0.16, 1, 0.3, 1],
+        delay: index * 0.18,
+      }}
+      whileHover={{
+        color: "#0052FF",
+        textShadow: "0 0 60px rgba(0,82,255,0.5), 0 0 120px rgba(0,82,255,0.2)",
+        transition: { duration: 0.2 },
+      }}
       style={{
-        minHeight: "min(42vh, 420px)",
-        display: "flex",
-        width: "100%",
-        alignItems: "center",
-        justifyContent: "center",
+        display: "block",
+        fontFamily: '"DM Sans", "Helvetica Neue", Arial, sans-serif',
+        fontWeight: 100,
+        fontSize: "clamp(64px, 11vw, 152px)",
+        letterSpacing: "-0.02em",
+        lineHeight: 1.05,
+        color: "rgba(255,255,255,0.92)",
+        textDecoration: "none",
+        cursor: "pointer",
+        textShadow: "none",
       }}
     >
-      <motion.span
-        style={{
-          ...wordStyle,
-          color: "rgba(255,255,255,0.92)",
-        }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: isInView ? 1 : 0 }}
-        transition={{
-          duration: 0.85,
-          ease: [0.22, 1, 0.36, 1],
-        }}
-      >
-        {text}
-      </motion.span>
-    </div>
+      {word.label}
+    </motion.a>
   );
 }
 
 export default function WhatIBuild() {
+  const ref = useRef<HTMLElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-15%" });
+
   return (
     <section
-      aria-label="Qué construyo"
+      id="what-i-build"
+      ref={ref}
       style={{
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "flex-start",
-        gap: "0.1em",
-        padding: "12vh 5vw 28vh",
+        justifyContent: "center",
+        padding: "10vh 6vw",
+        position: "relative",
       }}
-      className="relative z-10 w-full"
     >
-      {WORDS.map((w) => (
-        <BuildWord key={w} text={w} />
+      {WORDS.map((w, i) => (
+        <Word key={w.label} word={w} index={i} parentInView={inView} />
       ))}
     </section>
   );

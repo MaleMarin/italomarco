@@ -56,6 +56,7 @@ const cardBaseClass =
 export default function Services() {
   return (
     <section
+      id="servicios"
       aria-labelledby="services-heading"
       className="relative z-10"
       style={{
