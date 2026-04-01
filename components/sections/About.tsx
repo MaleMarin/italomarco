@@ -8,6 +8,12 @@ const STATEMENTS = [
   "El track que necesitas aún no existe. Eso es exactamente el punto de partida.",
 ];
 
+const SOCIAL_LINKS = [
+  { label: "Spotify",   href: "https://open.spotify.com/intl-es/artist/6ZHmI6dQAtHX8h7RO8VcZX?si=vtvgNyE3TEmGHszCAAUPVQ" },
+  { label: "Instagram", href: "https://www.instagram.com/italomarcoo/?hl=es" },
+  { label: "TikTok",    href: "https://www.tiktok.com/@italomarco1?lang=es-419" },
+];
+
 export default function About() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, {
@@ -194,12 +200,7 @@ export default function About() {
             transition={{ duration: 0.6, delay: 0.4 }}
             style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}
           >
-            {[
-              { label: "Spotify", href: "https://open.spotify.com" },
-              { label: "YouTube", href: "https://youtube.com" },
-              { label: "Instagram", href: "https://instagram.com" },
-              { label: "TikTok", href: "https://tiktok.com" },
-            ].map((link) => (
+            {SOCIAL_LINKS.map((link) => (
               <motion.a
                 key={link.label}
                 href={link.href}
