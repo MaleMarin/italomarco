@@ -151,7 +151,7 @@ export default function Contact() {
             hola@italomarco.com
           </a>
           <a
-            href="https://wa.me/56912345678"
+            href="https://wa.me/56953330472"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 rounded-lg border-[0.5px] border-[rgba(255,255,255,0.1)] bg-transparent px-5 py-3 text-[13px] font-extralight text-[rgba(255,255,255,0.5)] no-underline transition-[border-color,color] duration-300 hover:border-[rgba(37,211,102,0.4)] hover:text-[rgba(37,211,102,0.9)]"
