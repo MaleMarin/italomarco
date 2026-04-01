@@ -3,9 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "clean": "rm -rf .next .turbo node_modules/.cache",
     "dev": "next dev -p 3052",
-    "dev:reset": "lsof -ti :3052 | xargs kill -9 2>/dev/null; rm -rf .next node_modules/.cache && next dev -p 3052",
+    "dev:turbo": "next dev --turbo -p 3052",
+    "dev:webpack": "next dev -p 3052",
+    "dev:clean": "bash scripts/dev-clean.sh",
+    "dev:reset": "npm run dev:clean",
     "build": "next build",
+    "build:clean": "npm run clean && next build",
     "start": "next start",
     "lint": "next lint"
   },

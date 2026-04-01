@@ -41,6 +41,7 @@ export function useHeaderIntro() {
 
 export function Providers({ children }: { children: ReactNode }) {
   const [locale, setLocale] = useState<Locale>("es");
+  /** false en "/" hasta que termine el vinilo (o timeout); si empieza en true, el header tapa el intro y el cuerpo parece vacío. */
   const [homeIntroComplete, setHomeIntroComplete] = useState(false);
 
   return (

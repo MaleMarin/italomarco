@@ -1,62 +1,39 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import {
+  vinylCanvasFailsafeMs,
+  vinylResolvedTimeline,
+} from "@/lib/vinylIntroTiming";
 
 /**
  * Onda tipo referencia: bulbo fuerte ~2–5 en punto (derecha), resto casi circular; anclada a la
- * vista mientras el plato gira 360°; al cerrar la vuelta vuelve a la derecha y arranca el morph.
+ * vista mientras el plato gira 360° a velocidad angular constante hasta alinear el morph con el cierre de vuelta.
+ *
+ * La frase en canvas usa la misma tipografía que “PRODUCCIÓN.” en WhatIBuild (DM Sans 100, -0.02em, 1.05).
+ * Tiempos: `lib/vinylIntroTiming.ts` (también usado por `VinylHome` para el timeout).
  */
-/** Giro con ease-out: la velocidad cae hacia el final (sin “corte” en 2π). */
-const T_DISK = 5200;
-/** Morph largo y solapado con el final del giro: la frase emerge mientras el plato frena. */
-const T_MORPH = 5800;
-const T_HOLD = 1600;
-const T_FADE = 1400;
-/** Densidad del trazo (cada partícula = un arc/frame en morph). */
-const N = 7000;
 
-const PHRASE_LINE1 = "No capturo sonido.";
-const PHRASE_LINE2 = "Traduzco intenciones.";
+/** Primera frase (pequeña, arriba). */
+const PHRASE_SUB_LINE = "No capturo sonido.";
+/** Segunda frase en dos palabras grandes (debajo). */
+const PHRASE_HERO_WORDS = ["Traduzco", "intenciones."] as const;
 
-/** Acento eléctrico #0052FF — mismo RGB en morph, hold y fade. */
-const LETTER_ACCENT = "0, 82, 255";
-
-/** Misma familia y peso que WhatIBuild (DM Sans 100); fallbacks si el raster falla. */
-const PHRASE_FONT_STACK =
-  '"DM Sans", "Plus Jakarta Sans", system-ui, sans-serif';
-const PHRASE_WEIGHT_PRIMARY = 100;
-
-/** Tracking más apretado para trazo más fino. */
-function phraseLetterSpacingPx(fontPx: number) {
-  return `${(-fontPx * 0.044).toFixed(2)}px`;
-}
-
-/** Morph disco→frase: quintic ease in-out (más suave que smoothstep+cos). */
-function morphFlow(linearT: number) {
-  const t = Math.max(0, Math.min(1, linearT));
-  return t < 0.5
-    ? 16 * t * t * t * t * t
-    : 1 - (-2 * t + 2) ** 5 / 2;
-}
+/** Color de la frase (RGB); contraste sobre #020202. */
+const LETTER_ACCENT = "90, 150, 255";
 
 /**
- * Último ~14% del morph: la quintica dispara demasiada velocidad y se nota salto antes de cerrar la frase.
- * Cierra con smoothstep hacia 1 para aplanar la curva al final.
+ * Misma voz tipográfica que `wordStyle` en WhatIBuild (p. ej. “PRODUCCIÓN.”):
+ * `font-sans` = DM Sans, peso 100, letterSpacing -0.02em.
  */
-function morphFlowEaseTail(linearT: number, tailFrac = 0.14) {
-  const t = Math.max(0, Math.min(1, linearT));
-  const u0 = 1 - tailFrac;
-  if (t <= u0) return morphFlow(t);
-  const u = (t - u0) / tailFrac;
-  const w = u * u * (3 - 2 * u);
-  const v0 = morphFlow(u0);
-  return v0 + (1 - v0) * w;
-}
+const PHRASE_FONT_STACK = '"DM Sans", sans-serif';
+const PHRASE_WEIGHT_PRIMARY = 100;
+/** Interlineado como WhatIBuild (`lineHeight: 1.05`). */
+const PHRASE_LINE_HEIGHT = 1.05;
 
-/** 1 - (1-t)³: arranca con inercia y frena suave al llegar a 2π. */
-function easeOutCubic(t: number) {
-  const u = Math.max(0, Math.min(1, t));
-  return 1 - (1 - u) ** 3;
+/** -0.02em en px (igual que WhatIBuild `letterSpacing: "-0.02em"`). */
+function phraseLetterSpacingPx(fontPx: number) {
+  return `${(-0.02 * fontPx).toFixed(2)}px`;
 }
 
 export type VinylMorphProps = {
@@ -64,212 +41,6 @@ export type VinylMorphProps = {
   /** Si true, tiempos más cortos (no ocultar el intro en la página). */
   prefersReducedMotion?: boolean;
 };
-
-function shuffleInPlace<T>(arr: T[]) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-}
-
-/** Ensures exactly `count` targets; jitters duplicates so particles do not stack on one pixel. */
-function expandTargetsToCount(
-  pts: { x: number; y: number }[],
-  count: number,
-  W: number,
-  H: number,
-  line1Y: number,
-  line2Y: number,
-  textAnchorX: number,
-  textRightX: number,
-): { x: number; y: number }[] {
-  if (pts.length === 0)
-    return fallbackTextPositions(
-      W,
-      H,
-      count,
-      line1Y,
-      line2Y,
-      textAnchorX,
-      textRightX,
-    );
-  if (pts.length >= count) {
-    shuffleInPlace(pts);
-    return pts.slice(0, count);
-  }
-  const out: { x: number; y: number }[] = [];
-  const jx = () => (Math.random() - 0.5) * 0.2;
-  const jy = () => (Math.random() - 0.5) * 0.2;
-  for (let i = 0; i < count; i++) {
-    const p = pts[Math.floor(Math.random() * pts.length)];
-    out.push({
-      x: Math.max(0, Math.min(W - 1, p.x + jx())),
-      y: Math.max(0, Math.min(H - 1, p.y + jy())),
-    });
-  }
-  return out;
-}
-
-function fallbackTextPositions(
-  W: number,
-  H: number,
-  count: number,
-  line1Y: number,
-  line2Y: number,
-  textAnchorX: number,
-  textRightX: number,
-): { x: number; y: number }[] {
-  const pts: { x: number; y: number }[] = [];
-  const xMax = Math.min(W - 6, textRightX, W * 0.995);
-  const xMin = Math.max(0, textAnchorX);
-  const span = Math.max(40, xMax - xMin);
-  const rows = [line1Y, line2Y];
-  const perRow = Math.ceil(count / rows.length);
-  for (const rowY of rows) {
-    for (let i = 0; i < perRow && pts.length < count; i++) {
-      pts.push({
-        x: xMin + Math.random() * span,
-        y: rowY + (Math.random() - 0.5) * 44,
-      });
-    }
-  }
-  while (pts.length < count) {
-    pts.push({
-      x: xMin + Math.random() * span,
-      y: (line1Y + line2Y) / 2,
-    });
-  }
-  return pts.slice(0, count);
-}
-
-async function sampleTextPositions(
-  W: number,
-  H: number,
-  count: number,
-  line1Y: number,
-  line2Y: number,
-  textAnchorX: number,
-  fontPx: number,
-  textRightX: number,
-) {
-  const off = document.createElement("canvas");
-  off.width = W;
-  off.height = H;
-  off.style.cssText =
-    "position:fixed;top:-9999px;left:-9999px;opacity:0;pointer-events:none;";
-  document.body.appendChild(off);
-  const oc = off.getContext("2d", { willReadFrequently: true })!;
-
-  let best: { x: number; y: number }[] = [];
-
-  try {
-    await document.fonts.ready;
-    try {
-      await document.fonts.load(
-        `${PHRASE_WEIGHT_PRIMARY} ${fontPx}px DM Sans`,
-      );
-    } catch {
-      /* ignore */
-    }
-    await new Promise((r) => setTimeout(r, 100));
-
-    const px = `${fontPx}px`;
-    const w = PHRASE_WEIGHT_PRIMARY;
-    const candidates = [
-      `${w} ${px} ${PHRASE_FONT_STACK}`,
-      `200 ${px} ${PHRASE_FONT_STACK}`,
-      `300 ${px} ${PHRASE_FONT_STACK}`,
-      `200 ${px} "Plus Jakarta Sans", sans-serif`,
-      `300 ${px} system-ui, sans-serif`,
-    ];
-
-    const x1Scan = Math.min(W - 1, Math.ceil(textRightX));
-    const track = phraseLetterSpacingPx(fontPx);
-
-    for (const spec of candidates) {
-      oc.clearRect(0, 0, W, H);
-      oc.font = spec;
-      oc.fillStyle = "#ffffff";
-      oc.textAlign = "left";
-      oc.textBaseline = "middle";
-      oc.letterSpacing = track;
-      oc.fillText(PHRASE_LINE1, textAnchorX, line1Y);
-      oc.fillText(PHRASE_LINE2, textAnchorX, line2Y);
-
-      const { data } = oc.getImageData(0, 0, W, H);
-      const pts: { x: number; y: number }[] = [];
-      const pad = Math.ceil(fontPx * 0.62);
-      const y0 = Math.max(0, Math.floor(Math.min(line1Y, line2Y) - pad));
-      const y1 = Math.min(H - 1, Math.ceil(Math.max(line1Y, line2Y) + pad));
-      const x0 = Math.max(0, Math.floor(textAnchorX - 12));
-      const x1 = x1Scan;
-      const step = 1;
-
-      for (let y = y0; y <= y1; y += step) {
-        const row = y * W * 4;
-        for (let x = x0; x <= x1; x += step) {
-          const a = data[row + x * 4 + 3];
-          if (a > 5) pts.push({ x, y });
-          else if (a > 1) {
-            const idx = (xx: number, yy: number) =>
-              yy >= y0 && yy <= y1 && xx >= x0 && xx <= x1
-                ? data[yy * W * 4 + xx * 4 + 3]
-                : 0;
-            const n1 = idx(x + 1, y);
-            const n2 = idx(x - 1, y);
-            const n3 = idx(x, y + 1);
-            const n4 = idx(x, y - 1);
-            const d1 = idx(x + 1, y + 1);
-            const d2 = idx(x - 1, y + 1);
-            const d3 = idx(x + 1, y - 1);
-            const d4 = idx(x - 1, y - 1);
-            const thr = 14;
-            if (
-              n1 > thr ||
-              n2 > thr ||
-              n3 > thr ||
-              n4 > thr ||
-              d1 > thr ||
-              d2 > thr ||
-              d3 > thr ||
-              d4 > thr
-            ) {
-              pts.push({ x, y });
-            }
-          }
-        }
-      }
-
-      if (pts.length > best.length) best = pts;
-      if (best.length >= Math.min(count * 5.2, 320000)) break;
-    }
-  } finally {
-    off.remove();
-  }
-
-  if (best.length < 30) {
-    return fallbackTextPositions(
-      W,
-      H,
-      count,
-      line1Y,
-      line2Y,
-      textAnchorX,
-      textRightX,
-    );
-  }
-
-  return expandTargetsToCount(
-    best,
-    count,
-    W,
-    H,
-    line1Y,
-    line2Y,
-    textAnchorX,
-    textRightX,
-  );
-}
 
 export default function VinylMorph({
   onComplete,
@@ -281,7 +52,7 @@ export default function VinylMorph({
   onCompleteRef.current = onComplete;
   const [visible, setVisible] = useState(true);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     let mounted = true;
     let introDone = false;
     let failsafeTimer: number | null = null;
@@ -300,7 +71,10 @@ export default function VinylMorph({
     };
 
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
+    const ctx = canvas?.getContext("2d", {
+      alpha: false,
+      desynchronized: true,
+    });
     if (!canvas || !ctx) {
       const t = window.setTimeout(finishIntro, 0);
       return () => {
@@ -309,9 +83,17 @@ export default function VinylMorph({
       };
     }
 
-    const W = window.innerWidth;
-    const H = window.innerHeight;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const W = Math.max(1, window.innerWidth);
+    const H = Math.max(1, window.innerHeight);
+    if (W < 48 || H < 48) {
+      const t = window.setTimeout(finishIntro, 0);
+      return () => {
+        window.clearTimeout(t);
+        mounted = false;
+      };
+    }
+    /** Cap duro: retina ×2 sobre este canvas multiplica por ~4 los píxeles. */
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.35);
     canvas.width = W * dpr;
     canvas.height = H * dpr;
     canvas.style.width = `${W}px`;
@@ -321,21 +103,19 @@ export default function VinylMorph({
     canvas.style.left = "0";
     ctx.scale(dpr, dpr);
 
-    const tDisk = prefersReducedMotion ? 1200 : T_DISK;
-    const tMorph = prefersReducedMotion ? 1400 : T_MORPH;
-    const tHold = prefersReducedMotion ? 450 : T_HOLD;
-    const tFade = prefersReducedMotion ? 450 : T_FADE;
-    /** Fase radial de las ondas tras acabar el giro (rad/ms). */
+    const {
+      tDisk,
+      tMorph,
+      tHold,
+      tFade,
+      tSpinEff,
+      morphStart,
+      morphEndEff,
+    } = vinylResolvedTimeline(prefersReducedMotion);
+    /** Deriva temporal de la onda dentro del sector derecho (sin(14θ+φ)). */
     const RIPPLE_DRIFT_PER_MS = 0.00032;
-    /** Debe ser ≤ corte en page.tsx (VINYL_MAX_MS) para que el padre desmonte antes o en sync. */
-    const failsafeMs = Math.min(
-      tDisk + tMorph * 2 + tHold + tFade + 4000,
-      17500,
-    );
+    const failsafeMs = vinylCanvasFailsafeMs(prefersReducedMotion, 4500, 20000);
     failsafeTimer = window.setTimeout(() => finishIntro(), failsafeMs);
-    /** Inicio del morph mientras el plato aún frena (fracción de T_DISK). */
-    const morphStartFrac = prefersReducedMotion ? 0.42 : 0.36;
-    const morphStart = tDisk * morphStartFrac;
 
     const cx = W / 2;
     /** Centro vertical del plato (~medio del viewport; antes 0.405 quedaba alto). */
@@ -351,13 +131,124 @@ export default function VinylMorph({
       nameBelowPhraseY: Math.min(H - 16, cy + SIZE * 0.56 + 18),
       nameShiftTarget: 0,
     };
-    const RINGS = 80;
+
+    type PhraseMetrics = {
+      /** Eje horizontal de apertura (mitad de la pantalla). */
+      splitMidY: number;
+      heroFontPx: number;
+      subFontPx: number;
+      heroY: number;
+      subY: number;
+      subX: number;
+      heroWordX: [number, number];
+      textBlockW: number;
+      textRightX: number;
+    };
+
+    const measurePhraseMetrics = (): PhraseMetrics => {
+      const splitMidY = H * 0.5;
+      const sidePad = Math.max(20, W * 0.05);
+      const availRow = Math.max(120, W - 2 * sidePad);
+      const mtx = document.createElement("canvas").getContext("2d");
+      if (!mtx) {
+        const heroFontPx = 48;
+        const subFontPx = 17;
+        const heroY = splitMidY + subFontPx * 0.5 + 10;
+        const subY = splitMidY - heroFontPx * 0.28;
+        const x0 = W * 0.5 - 100;
+        return {
+          splitMidY,
+          heroFontPx,
+          subFontPx,
+          heroY,
+          subY,
+          subX: W * 0.5 - 130,
+          heroWordX: [x0, x0 + 140],
+          textBlockW: 260,
+          textRightX: W * 0.5 + 130,
+        };
+      }
+
+      const wordGap = (fz: number) => fz * 0.15;
+      const rowTotal = (fz: number) => {
+        mtx.font = `${PHRASE_WEIGHT_PRIMARY} ${fz}px ${PHRASE_FONT_STACK}`;
+        let sum = 0;
+        for (let i = 0; i < PHRASE_HERO_WORDS.length; i++) {
+          mtx.letterSpacing = phraseLetterSpacingPx(fz);
+          sum += mtx.measureText(PHRASE_HERO_WORDS[i]).width;
+          if (i < PHRASE_HERO_WORDS.length - 1) sum += wordGap(fz);
+        }
+        return sum;
+      };
+
+      let heroFontPx = Math.min(108, Math.max(42, Math.round(W * 0.082)));
+      while (heroFontPx >= 30 && rowTotal(heroFontPx) > availRow) {
+        heroFontPx -= 2;
+      }
+
+      mtx.font = `${PHRASE_WEIGHT_PRIMARY} ${heroFontPx}px ${PHRASE_FONT_STACK}`;
+      mtx.letterSpacing = phraseLetterSpacingPx(heroFontPx);
+      const w0 = mtx.measureText(PHRASE_HERO_WORDS[0]).width;
+      const w1 = mtx.measureText(PHRASE_HERO_WORDS[1]).width;
+      const g = wordGap(heroFontPx);
+      const heroRowW = w0 + g + w1;
+      let x0 = W * 0.5 - heroRowW * 0.5;
+      x0 = Math.max(sidePad, Math.min(W - sidePad - heroRowW, x0));
+      const heroWordX: [number, number] = [x0, x0 + w0 + g];
+
+      let subFontPx = Math.max(14, Math.round(heroFontPx * 0.31));
+      mtx.font = `${PHRASE_WEIGHT_PRIMARY} ${subFontPx}px ${PHRASE_FONT_STACK}`;
+      mtx.letterSpacing = phraseLetterSpacingPx(subFontPx);
+      let subW = mtx.measureText(PHRASE_SUB_LINE).width;
+      while (subFontPx >= 13 && subW > availRow) {
+        subFontPx -= 1;
+        mtx.font = `${PHRASE_WEIGHT_PRIMARY} ${subFontPx}px ${PHRASE_FONT_STACK}`;
+        mtx.letterSpacing = phraseLetterSpacingPx(subFontPx);
+        subW = mtx.measureText(PHRASE_SUB_LINE).width;
+      }
+      const subX = W * 0.5 - subW * 0.5;
+      /** Pequeña arriba del eje, grande debajo. */
+      const heroY =
+        splitMidY + subFontPx * PHRASE_LINE_HEIGHT * 0.55 + heroFontPx * 0.1;
+      const subY = splitMidY - heroFontPx * PHRASE_LINE_HEIGHT * 0.38;
+      const textBlockW = Math.max(heroRowW, subW);
+      const textRightX = Math.min(
+        W - 8,
+        Math.max(x0 + heroRowW, subX + subW) + 10,
+      );
+
+      return {
+        splitMidY,
+        heroFontPx,
+        subFontPx,
+        heroY,
+        subY,
+        subX,
+        heroWordX,
+        textBlockW,
+        textRightX,
+      };
+    };
+
+    const applyNameLayoutFromMetrics = (m: PhraseMetrics) => {
+      layout.nameShiftTarget = W * 0.5 - cx;
+      layout.nameBelowDiskY = Math.min(H - 16, cy + SIZE * 0.54 + 16);
+      layout.nameBelowPhraseY = Math.min(
+        H - 12,
+        m.heroY + m.heroFontPx * PHRASE_LINE_HEIGHT * 0.55 + 22,
+      );
+    };
+
+    /** Medición síncrona para posición de la frase y layout del nombre. */
+    const phraseMetricsSync = measurePhraseMetrics();
+    applyNameLayoutFromMetrics(phraseMetricsSync);
+    const RINGS = 52;
     const MIN_R = SIZE * 0.06;
     const MAX_R = SIZE * 0.46;
     const TWO_PI = Math.PI * 2;
-    /** Mismo paso angular que `drawDiskGrooves` (s=0..STEPS). Partículas = puntos del trazo, sin “salto” al abrir morph. */
-    const GROOVE_ANGLE_STEPS = 280;
-    /** Inicio del giro: surcos alineados; ease-out lleva el ángulo a 2π al terminar T_DISK. */
+    /** Mismo paso angular que `drawDiskGrooves`; menos vértices = menos carga CPU (evita “pegadas”). */
+    const GROOVE_ANGLE_STEPS = 288;
+    /** Fase inicial del plato en pantalla (surcos alineados). */
     const DISK_PHASE0 = 0;
 
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -377,9 +268,9 @@ export default function VinylMorph({
     };
 
     /**
-     * Campana en el borde DERECHO del plato (pico en angle=0 local).
-     * Antes: Gaussiana con wrapSigned(angle) → quiebre de derivada al cruzar θ=π (salto radial visible).
-     * Ahora: 1−cos(angle−phase) es 2π-periódica y C^∞ en el círculo; mismo pico en 0 y 2π (cierre limpio).
+     * Bulbo fuerte a la derecha (bell). Con amp = bell·sin solo, en θ≈π el radio casi no oscila: el ojo
+     * compara con el sector ondulado y parece “freno” aunque ω sea constante. Mezcla ~7% de onda global
+     * (muy baja) para que todo el borde tenga fase visible sin anular el acento derecho.
      */
     const grooveRadius = (
       angle: number,
@@ -389,7 +280,7 @@ export default function VinylMorph({
       const frac = ringIndex / (RINGS - 1);
       const baseR = MIN_R + (MAX_R - MIN_R) * frac;
       const rel = angle - DISK_PHASE0;
-      const sigmaBell = 0.41;
+      const sigmaBell = 0.34;
       const bell = Math.exp(
         -(1 - Math.cos(rel)) / (2 * sigmaBell * sigmaBell),
       );
@@ -397,7 +288,8 @@ export default function VinylMorph({
         14 * angle + ripplePhase + ringIndex * 0.52 + Math.PI * 0.5,
       );
       const radialFade = 0.38 + 0.62 * frac;
-      const amp = SIZE * 0.024 * bell * ripples * radialFade;
+      const waveGain = 0.07 + 0.93 * bell;
+      const amp = SIZE * 0.024 * radialFade * ripples * waveGain;
       return baseR + amp;
     };
 
@@ -447,12 +339,10 @@ export default function VinylMorph({
           } else ctx.lineTo(x, y);
         }
         ctx.closePath();
-        ctx.strokeStyle = `rgba(0,${g},255,0.88)`;
+        ctx.strokeStyle = `rgba(0,${g},255,0.9)`;
         ctx.lineWidth = 0.85;
-        ctx.shadowBlur = frac > 0.4 ? 7 : 2;
-        ctx.shadowColor = `rgba(0,80,255,${0.35 + frac * 0.4})`;
+        /** shadowBlur por anillo es muy caro; sin él el plato sigue leyéndose y el scroll va fluido. */
         ctx.stroke();
-        ctx.shadowBlur = 0;
       }
       ctx.beginPath();
       ctx.arc(cx, cy, SIZE * 0.055, 0, Math.PI * 2);
@@ -499,95 +389,88 @@ export default function VinylMorph({
       ctx.restore();
     };
 
-    /** Muestreo en los mismos vértices que el trazo de surcos (evita desfase líneas ↔ puntos al transformar). */
-    const getDiskPts = (
-      diskRot: number,
-      ripplePhase: number,
-      count: number,
+    const smoothstep01 = (t: number) => {
+      const x = Math.max(0, Math.min(1, t));
+      return x * x * (3 - 2 * x);
+    };
+
+    /** Curva más suave que smoothstep (entrada/salida de frase). */
+    const smootherstep01 = (t: number) => {
+      const x = Math.max(0, Math.min(1, t));
+      return x * x * x * (x * (x * 6 - 15) + 10);
+    };
+
+    /** Stagger dentro de la segunda frase (Traduzco / intenciones). */
+    const heroWordFade = (line2Fade: number, index: number) => {
+      if (prefersReducedMotion) return line2Fade;
+      return smootherstep01((line2Fade - index * 0.05) / 0.62);
+    };
+
+    /**
+     * Apertura desde el medio: máscaras negras arriba/abajo;
+     * fade-in primero línea pequeña, después la segunda (con stagger en palabras hero).
+     */
+    const drawPhraseReveal = (
+      opacity: number,
+      splitGapPx: number,
+      fadeLine1: number,
+      fadeLine2: number,
     ) => {
-      const pts: { x: number; y: number }[] = [];
-      const vertsPerRing = GROOVE_ANGLE_STEPS + 1;
-      const targetPerRing = Math.max(1, Math.ceil(count / RINGS));
-      const stride = Math.max(1, Math.floor(vertsPerRing / targetPerRing));
+      if (opacity < 0.04) return;
+      const m = phraseMetricsSync;
+      const midY = m.splitMidY;
+      const maxGap = H * 0.5 + 8;
+      const gap = Math.min(Math.max(0, splitGapPx), maxGap);
 
-      for (let i = 0; i < RINGS; i++) {
-        for (let s = 0; s <= GROOVE_ANGLE_STEPS; s += stride) {
-          const angle = (s / GROOVE_ANGLE_STEPS) * TWO_PI;
-          const r = grooveRadius(angle, i, ripplePhase);
-          pts.push({
-            x: cx + Math.cos(angle + diskRot) * r,
-            y: cy + Math.sin(angle + diskRot) * r,
-          });
-        }
+      ctx.save();
+
+      if (!prefersReducedMotion && gap < maxGap - 2) {
+        ctx.fillStyle = "#020202";
+        ctx.fillRect(0, 0, W, Math.max(0, midY - gap));
+        ctx.fillRect(0, midY + gap, W, Math.max(0, H - midY - gap));
       }
 
-      if (pts.length === 0) return pts;
-      if (pts.length >= count) {
-        shuffleInPlace(pts);
-        return pts.slice(0, count);
-      }
-      const jx = () => (Math.random() - 0.5) * 0.12;
-      const jy = () => (Math.random() - 0.5) * 0.12;
-      while (pts.length < count) {
-        const p = pts[Math.floor(Math.random() * pts.length)];
-        pts.push({
-          x: Math.max(0, Math.min(W - 1, p.x + jx())),
-          y: Math.max(0, Math.min(H - 1, p.y + jy())),
-        });
-      }
-      shuffleInPlace(pts);
-      return pts.slice(0, count);
-    };
+      ctx.beginPath();
+      ctx.rect(0, midY - gap, W, gap * 2);
+      ctx.clip();
 
-    type P = {
-      sx: number;
-      sy: number;
-      tx: number;
-      ty: number;
-      px: number;
-      py: number;
-    };
-    /** Inyección de targets reales cuando termina el muestreo de texto (antes del morph). */
-    const targetUpdateRef: { pts: { x: number; y: number }[] | null } = {
-      pts: null,
-    };
+      const baseA = Math.min(1, opacity);
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = `rgba(${LETTER_ACCENT}, 0.96)`;
 
-    const lineGuess = Math.max(22, Math.round(SIZE * 0.048));
-    const fbRightX = W - 12;
-    const fbPts = fallbackTextPositions(
-      W,
-      H,
-      N,
-      cy - lineGuess * 0.55,
-      cy + lineGuess * 0.55,
-      textAnchorX,
-      fbRightX,
-    );
-    /** Origen coherente en el primer frame (se alinea al giro real en cada tick de fase disco). */
-    const disk0 = getDiskPts(DISK_PHASE0, DISK_PHASE0, N);
-    const particles: P[] = disk0.map((dp, i) => {
-      const tp = fbPts[i % fbPts.length];
-      return {
-        sx: dp.x,
-        sy: dp.y,
-        tx: tp.x,
-        ty: tp.y,
-        px: dp.x,
-        py: dp.y,
-      };
-    });
+      const subWe = fadeLine1;
+      if (subWe > 0.02) {
+        const drop = (1 - subWe) * (m.subFontPx * 0.14);
+        ctx.save();
+        ctx.globalAlpha = baseA * subWe * 0.92;
+        ctx.font = `${PHRASE_WEIGHT_PRIMARY} ${m.subFontPx}px ${PHRASE_FONT_STACK}`;
+        ctx.letterSpacing = phraseLetterSpacingPx(m.subFontPx);
+        ctx.fillText(PHRASE_SUB_LINE, m.subX, m.subY + drop);
+        ctx.restore();
+      }
+
+      for (let i = 0; i < PHRASE_HERO_WORDS.length; i++) {
+        const we = heroWordFade(fadeLine2, i);
+        if (we < 0.015) continue;
+        const drop = (1 - we) * (m.heroFontPx * 0.055);
+        const wx = m.heroWordX[i];
+        const wy = m.heroY + drop;
+        ctx.save();
+        ctx.globalAlpha = baseA * we;
+        ctx.font = `${PHRASE_WEIGHT_PRIMARY} ${m.heroFontPx}px ${PHRASE_FONT_STACK}`;
+        ctx.letterSpacing = phraseLetterSpacingPx(m.heroFontPx);
+        ctx.fillText(PHRASE_HERO_WORDS[i], wx, wy);
+        ctx.restore();
+      }
+
+      ctx.restore();
+    };
 
     let rafId = 0;
     let alive = true;
-    /** Un solo muestreo al entrar en morph (antes: getDiskPts cada frame en el giro → colgaba la pestaña). */
-    let morphPrimed = false;
-    /**
-     * Reloj del morph de partículas (puede reiniciarse si los targets reales llegan tarde).
-     * Si inject ocurre con posT>0 hacia fallbacks, cambiar tx sin reiniciar provoca un salto visible.
-     */
-    let particleMorphT0 = morphStart;
 
-    const runLoop = (parts: P[]) => {
+    const runLoop = () => {
       const t0 = performance.now();
 
       const tick = () => {
@@ -595,26 +478,6 @@ export default function VinylMorph({
         rafId = requestAnimationFrame(tick);
         try {
         const el = performance.now() - t0;
-
-        const inject = targetUpdateRef.pts;
-        if (inject) {
-          targetUpdateRef.pts = null;
-          const restartParticleClock = morphPrimed && el >= morphStart;
-          if (restartParticleClock) particleMorphT0 = el;
-          for (let i = 0; i < parts.length; i++) {
-            const t = inject[i % inject.length];
-            /** Nuevo destino sin salto: el morph sale de la posición actual en pantalla. */
-            parts[i].sx = parts[i].px;
-            parts[i].sy = parts[i].py;
-            parts[i].tx = t.x;
-            parts[i].ty = t.y;
-          }
-        }
-
-        const morphEndEff = Math.max(
-          morphStart + tMorph,
-          particleMorphT0 + tMorph,
-        );
 
         if (el >= morphEndEff + tHold + tFade) {
           alive = false;
@@ -624,14 +487,25 @@ export default function VinylMorph({
 
         ctx.clearRect(0, 0, W, H);
 
-        const spinU = Math.min(1, el / tDisk);
-        const diskRot = DISK_PHASE0 + easeOutCubic(spinU) * TWO_PI;
-        /** Tras T_DISK, diskRot ya no sube; sin deriva, sin(14θ+φ) congela y las ondas “saltan”. */
-        const postSpinMs = Math.max(0, el - tDisk);
-        const ripplePhase =
-          diskRot + postSpinMs * RIPPLE_DRIFT_PER_MS;
+        /**
+         * ω constante en todo el intro: NO usar min(1, el/tSpinEff)·2π (corta ω a 0 al cerrar la vuelta).
+         * El creep 0.22·ω seguía siendo un bajón brusco de velocidad en tSpinEff → mismo “freno” percibido.
+         * tSpinEff solo define cuánto tarda una vuelta “de referencia”; el ángulo sigue el tiempo real sin tope.
+         */
+        const omega0 = TWO_PI / tSpinEff;
+        const diskRot = DISK_PHASE0 + el * omega0;
+        /**
+         * Solo deriva en t: si ripplePhase incluye diskRot, sin(14θ+φ) evoluciona en el marco local
+         * mientras ctx.rotate(diskRot) ya gira el trazo → doble fase y tirones visibles (sobre todo
+         * en el hemisferio izquierdo donde la campana es mínima).
+         */
+        const ripplePhase = el * RIPPLE_DRIFT_PER_MS;
 
-        const nameIntro = Math.min(1, el / Math.max(280, tDisk * 0.16));
+        const nameIntroRaw = Math.min(
+          1,
+          el / Math.max(320, tDisk * 0.2),
+        );
+        const nameIntro = smootherstep01(nameIntroRaw);
 
         if (el < morphStart) {
           drawDiskBackdrop(1);
@@ -639,40 +513,24 @@ export default function VinylMorph({
           drawNeedle(1);
           applyNameFrame(nameIntro, 0, layout.nameBelowDiskY);
         } else if (el < morphEndEff) {
-          if (!morphPrimed) {
-            morphPrimed = true;
-            const snap = getDiskPts(diskRot, ripplePhase, N);
-            for (let i = 0; i < parts.length; i++) {
-              const s = snap[i];
-              if (!s) break;
-              parts[i].sx = s.x;
-              parts[i].sy = s.y;
-              parts[i].px = s.x;
-              parts[i].py = s.y;
-            }
-          }
-
-          /** Surcos / halo / aguja: tiempo global desde morphStart. */
+          /** Surcos / halo / aguja: progreso lineal (sin ease quintic que frena al final). */
           const morphLinear = Math.min(1, (el - morphStart) / tMorph);
-          const mp =
-            morphLinear >= 1 ? 1 : morphFlowEaseTail(morphLinear);
-          /** Partículas: pueden reiniciar si los glyphs reales llegan tarde (evita salto). */
-          const morphLinearP = Math.min(1, (el - particleMorphT0) / tMorph);
-          const mpParticle =
-            morphLinearP >= 1 ? 1 : morphFlowEaseTail(morphLinearP);
-          const spinEase = easeOutCubic(spinU);
+          const mp = morphLinear;
+          const morphGlobalP = Math.min(1, (el - morphStart) / tMorph);
           /**
            * mpDiss: el vinilo (surcos/aguja/halo) se mantiene “entero” al abrir el morph;
-           * así no hay un corte brusco justo cuando empieza a frenar / mezclar con partículas.
+           * así no hay un corte brusco justo cuando empieza a frenar.
            */
           const dissStart = 0.1;
-          const mpDiss =
-            mp < dissStart ? 0 : Math.min(1, (mp - dissStart) / (1 - dissStart));
-          const grooveA = Math.max(
-            0,
-            1 -
-              Math.min(1, Math.max(0, mpDiss - 0.04) / 0.96) ** 1.05 * 0.97,
-          );
+          const spanDiss = 1 - dissStart;
+          const tDiss =
+            mp <= dissStart
+              ? 0
+              : Math.min(1, (mp - dissStart) / spanDiss);
+          /** smoothstep(tDiss): arranque de disolución sin quiebre de derivada en dissStart. */
+          const mpDiss = tDiss * tDiss * (3 - 2 * tDiss);
+          /** En mpDiss=1 opacidad 0 (antes quedaba ~3% por el offset 0.04 → golpe al pasar a hold). */
+          const grooveA = Math.max(0, (1 - mpDiss) ** 1.08);
           const backdropA = Math.max(0, 1 - mpDiss * 1.05);
           const needleA = Math.max(0, 1 - mpDiss * 1.85);
 
@@ -681,74 +539,79 @@ export default function VinylMorph({
             drawDiskGrooves(diskRot, ripplePhase, grooveA);
           }
           drawNeedle(needleA);
+          const mpName = smootherstep01(mp);
           applyNameFrame(
             1,
-            layout.nameShiftTarget * mp,
-            lerp(layout.nameBelowDiskY, layout.nameBelowPhraseY, mp),
+            layout.nameShiftTarget * mpName,
+            lerp(layout.nameBelowDiskY, layout.nameBelowPhraseY, mpName),
           );
 
-          /**
-           * Sin offset fijo en mp=0: cualquier término >0 al abrir el morph se nota como micro-salto.
-           * Mezcla posición solo con curva de morph + freno del plato.
-           */
-          const posT =
-            morphLinearP >= 1
-              ? 1
-              : Math.min(
-                  1,
-                  Math.max(0, mpParticle * (0.54 + 0.46 * spinEase)),
-                );
-          const alphaT = Math.max(0, Math.min(1, (posT - 0.12) / 0.88));
-          const alphaCurve = alphaT * alphaT * (3 - 2 * alphaT);
-          let a = lerp(0.05, 0.9, alphaCurve);
-          const st = posT * posT * (3 - 2 * posT);
-          const rad = lerp(0.28, 0.56, st);
+          const appearElapsed = Math.max(0, el - morphStart);
+          /** Entrada muy suave: rampa larga en ms reales. */
+          const appearMs = Math.min(900, Math.max(260, tMorph * 0.48));
+          const appearRaw = Math.min(1, appearElapsed / appearMs);
+          const appear = smootherstep01(smootherstep01(appearRaw));
 
-          /** Entrada suave de partículas; alineada al reloj de partículas (p. ej. tras inject tardío). */
-          const morphElapsed = el - particleMorphT0;
-          const appearMs = Math.min(520, Math.max(200, tMorph * 0.22));
-          const appearRaw = Math.min(1, morphElapsed / appearMs);
-          const appear = appearRaw * appearRaw * (3 - 2 * appearRaw);
-          a *= appear;
-
-          parts.forEach((p) => {
-            p.px = lerp(p.sx, p.tx, posT);
-            p.py = lerp(p.sy, p.ty, posT);
-            ctx.beginPath();
-            ctx.arc(p.px, p.py, rad, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(${LETTER_ACCENT}, ${a})`;
-            ctx.fill();
-          });
+          const textRevealRaw = Math.max(
+            0,
+            Math.min(1, (mpDiss - 0.44) / 0.5),
+          );
+          const textReveal = smootherstep01(smootherstep01(textRevealRaw));
+          const underlayA =
+            (0.12 + morphGlobalP * 0.28) * appear * textReveal;
+          const maxG = H * 0.5 + 8;
+          const animC = textReveal * appear;
+          const open = prefersReducedMotion
+            ? 1
+            : smootherstep01(smootherstep01(animC));
+          const splitGapPx = open * maxG;
+          /** 1ª línea ~1,2 s; 2ª ~1,4 s después, ambas con quintic suave. */
+          const seqT = Math.max(0, appearElapsed - tMorph * 0.04);
+          const fade1 = prefersReducedMotion
+            ? animC
+            : animC * smootherstep01(smootherstep01(seqT / 1200));
+          const fade2 = prefersReducedMotion
+            ? animC
+            : animC *
+              smootherstep01(smootherstep01((seqT - 780) / 1450));
+          drawPhraseReveal(underlayA, splitGapPx, fade1, fade2);
         } else if (el < morphEndEff + tHold) {
           applyNameFrame(
             1,
             layout.nameShiftTarget,
             layout.nameBelowPhraseY,
           );
-          parts.forEach((p) => {
-            ctx.beginPath();
-            ctx.arc(p.tx, p.ty, 0.6, 0, Math.PI * 2);
-            ctx.fill();
-          });
+          drawPhraseReveal(0.94, H * 0.5 + 8, 1, 1);
         } else {
+          const raw = Math.min(1, Math.max(0, (el - morphEndEff - tHold) / tFade));
+          /**
+           * Una sola curva para todo el cierre: coseno sobre tiempo suavizado (sin cortes).
+           * Texto canvas, velo negro y «Italo Marco» usan el mismo `fadeOut` / `u`.
+           */
+          const s = smootherstep01(smootherstep01(raw));
+          const u = 0.5 - 0.5 * Math.cos(Math.PI * s);
+          const fadeOut = 1 - u;
           applyNameFrame(
-            1,
+            fadeOut,
             layout.nameShiftTarget,
             layout.nameBelowPhraseY,
           );
-          const raw = (el - morphEndEff - tHold) / tFade;
-          const fa =
-            0.5 + 0.5 * Math.cos(Math.PI * Math.min(1, Math.max(0, raw)));
-          ctx.globalAlpha = Math.max(0, fa);
-          parts.forEach((p) => {
-            ctx.beginPath();
-            ctx.arc(p.tx, p.ty, 0.6, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(${LETTER_ACCENT}, 0.94)`;
-            ctx.fill();
-          });
-          ctx.globalAlpha = 1;
+          drawPhraseReveal(
+            0.94 * fadeOut,
+            H * 0.5 + 8,
+            fadeOut,
+            fadeOut,
+          );
+          ctx.save();
+          ctx.globalAlpha = u;
+          ctx.fillStyle = "#000000";
+          ctx.fillRect(0, 0, W, H);
+          ctx.restore();
         }
-        } catch {
+        } catch (err) {
+          if (process.env.NODE_ENV === "development") {
+            console.error("[VinylMorph] frame error", err);
+          }
           alive = false;
           finishIntro();
         }
@@ -757,106 +620,13 @@ export default function VinylMorph({
       rafId = requestAnimationFrame(tick);
     };
 
-    runLoop(particles);
-
-    void (async () => {
-      await Promise.race([
-        document.fonts.ready,
-        new Promise<void>((r) => setTimeout(r, 400)),
-      ]);
-      try {
-        await document.fonts.load(
-          `${PHRASE_WEIGHT_PRIMARY} 200px DM Sans`,
-        );
-      } catch {
+    void document.fonts.load(`${PHRASE_WEIGHT_PRIMARY} 200px DM Sans`).catch(
+      () => {
         /* ignore */
-      }
+      },
+    );
 
-      if (!alive) return;
-
-      const rightPad = 18;
-      const availableW = Math.max(96, W - textAnchorX - rightPad);
-      const mtx = document.createElement("canvas").getContext("2d")!;
-
-      const measureMax = (sz: number) => {
-        mtx.font = `${PHRASE_WEIGHT_PRIMARY} ${sz}px ${PHRASE_FONT_STACK}`;
-        mtx.letterSpacing = phraseLetterSpacingPx(sz);
-        return Math.max(
-          mtx.measureText(PHRASE_LINE1).width,
-          mtx.measureText(PHRASE_LINE2).width,
-        );
-      };
-
-      /* Tipografía más fina: tope y vw menores + peso 100 en raster. */
-      let phraseFontPx = Math.min(52, Math.max(20, Math.round(W * 0.026)));
-      while (phraseFontPx >= 18 && measureMax(phraseFontPx) > availableW - 6) {
-        phraseFontPx -= 2;
-      }
-
-      const textBlockW = measureMax(phraseFontPx);
-      const textRightX = Math.min(W - 8, textAnchorX + textBlockW + 10);
-
-      const lineHeight = phraseFontPx * 0.92;
-      let phraseY1 = cy - lineHeight * 0.5;
-      let phraseY2 = cy + lineHeight * 0.5;
-      const vPad = phraseFontPx * 0.55 + 8;
-      phraseY1 = Math.max(vPad, Math.min(H - vPad - lineHeight - 24, phraseY1));
-      phraseY2 = phraseY1 + lineHeight;
-      if (phraseY2 > H - vPad) {
-        phraseY2 = H - vPad;
-        phraseY1 = Math.max(vPad, phraseY2 - lineHeight);
-      }
-
-      const phraseMidX = textAnchorX + textBlockW * 0.5;
-      layout.nameShiftTarget = phraseMidX - cx;
-      layout.nameBelowDiskY = Math.min(H - 16, cy + SIZE * 0.54 + 16);
-      layout.nameBelowPhraseY = Math.min(
-        H - 12,
-        phraseY2 + phraseFontPx * 0.52 + 20,
-      );
-
-      let textPts: { x: number; y: number }[];
-      try {
-        textPts = await Promise.race([
-          sampleTextPositions(
-            W,
-            H,
-            N,
-            phraseY1,
-            phraseY2,
-            textAnchorX,
-            phraseFontPx,
-            textRightX,
-          ),
-          new Promise<{ x: number; y: number }[]>((resolve) =>
-            setTimeout(() => resolve([]), 3200),
-          ),
-        ]);
-      } catch {
-        textPts = fallbackTextPositions(
-          W,
-          H,
-          N,
-          phraseY1,
-          phraseY2,
-          textAnchorX,
-          textRightX,
-        );
-      }
-      if (!alive) return;
-      if (textPts.length === 0) {
-        textPts = fallbackTextPositions(
-          W,
-          H,
-          N,
-          phraseY1,
-          phraseY2,
-          textAnchorX,
-          textRightX,
-        );
-      }
-      targetUpdateRef.pts = textPts;
-    })();
+    runLoop();
 
     return () => {
       if (failsafeTimer != null) {
@@ -876,7 +646,8 @@ export default function VinylMorph({
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 100,
+        /** Por encima del Navbar (z-210); si no, el header aunque sea opacity 0 puede tapar el canvas en algunos navegadores. */
+        zIndex: 240,
         /* Opaco: si es transparente, el clearRect del canvas deja ver WhatIBuild y se mezcla con el vinilo. */
         backgroundColor: "#020202",
         pointerEvents: "auto",
@@ -901,6 +672,7 @@ export default function VinylMorph({
           textTransform: "uppercase",
           opacity: 0,
           pointerEvents: "none",
+          willChange: "opacity",
         }}
       >
         Italo Marco

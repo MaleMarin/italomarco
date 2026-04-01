@@ -1,9 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Evita caché de Webpack en dev corrupta (chunks 404 / vendor-chunks ENOENT) al mezclar .next con servidor vivo.
+  /**
+   * En dev con Webpack, la caché en disco (PackFileCacheStrategy) puede fallar en macOS con
+   * carpetas sincronizadas o al borrar `.next` con el servidor vivo → HTML pide chunks que
+   * no existen (404 en main-app.js, layout.css, etc.). Memoria evita estado corrupto.
+   * El día a día en local usa `npm run dev` (Webpack). Turbopack opcional: `npm run dev:turbo`.
+   */
   webpack: (config, { dev }) => {
     if (dev) {
-      config.cache = false;
+      config.cache = { type: "memory", maxGenerations: 1 };
     }
     return config;
   },
@@ -18,6 +23,7 @@ const nextConfig = {
   },
   async redirects() {
     return [
+      { source: "/favicon.ico", destination: "/icon.svg", permanent: false },
       { source: "/projects", destination: "/proyectos", permanent: false },
       { source: "/lab", destination: "/store", permanent: true },
     ];

@@ -8,6 +8,7 @@ type HomeIntroProps = { onPhraseComplete: () => void };
 
 const VINYL_VISIBLE_MS = 4200;
 
+/** No importado en `app/`; el intro activo es `VinylHome` + `VinylMorph`. Editar aquí no cambia la home. */
 export function HomeIntro({ onPhraseComplete }: HomeIntroProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [mounted, setMounted] = useState(true);

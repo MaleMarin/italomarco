@@ -54,6 +54,20 @@ export const metadata: Metadata = {
   description: "Traducir intenciones en sonido.",
 };
 
+/** Si falla la carga de chunks CSS de Tailwind en dev, el HTML sigue siendo usable. */
+const CRITICAL_FALLBACK_CSS = `
+html{background:#020202}
+body{margin:0;min-height:100dvh;background:#020202;color:#f2f2f2;font-family:system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:rgba(242,242,242,.55);text-decoration:none}
+a:hover{color:rgba(255,255,255,.88)}
+header{position:sticky;top:0;z-index:210;background:rgba(10,10,10,.88);border-bottom:1px solid #151515;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+header nav{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;max-width:72rem;margin:0 auto;padding:.75rem 1.25rem;min-height:3.5rem}
+header nav>ul{list-style:none;margin:0;padding:0}
+@media(max-width:767px){header nav>ul{display:none}}
+@media(min-width:768px){header nav>ul{display:flex;flex-direction:row;align-items:center;gap:2rem}}
+main{position:relative;z-index:10;min-height:100dvh}
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -63,8 +77,22 @@ export default function RootLayout({
     <html
       lang="es"
       className={`${sans.variable} ${plusJakarta.variable} ${inter.variable} ${playfair.variable} ${robotoMono.variable}`}
+      style={{ backgroundColor: "#020202" }}
     >
-      <body className="m-0 min-h-[100dvh] bg-film-studio bg-fixed font-sans text-mist antialiased">
+      <head>
+        <style
+          dangerouslySetInnerHTML={{ __html: CRITICAL_FALLBACK_CSS }}
+        />
+      </head>
+      <body
+        className="m-0 min-h-[100dvh] bg-film-studio bg-fixed font-sans text-mist antialiased"
+        style={{
+          margin: 0,
+          minHeight: "100dvh",
+          backgroundColor: "#020202",
+          color: "#F2F2F2",
+        }}
+      >
         <Providers>
           <FluidProvider>
             <Atmosphere>
@@ -72,7 +100,7 @@ export default function RootLayout({
               <Navbar />
               <main className="relative z-10 min-h-[100dvh]">
                 <RouteAmbient />
-                <div className="relative z-[2] min-h-[100dvh] w-full">
+                <div className="relative z-[2] min-h-[100dvh] w-full bg-[#020202]">
                   {children}
                 </div>
               </main>

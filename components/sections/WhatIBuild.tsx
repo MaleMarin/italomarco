@@ -20,8 +20,8 @@ function BuildWord({ text }: { text: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, {
     once: true,
-    amount: 0.42,
-    margin: "-8% 0px -12% 0px",
+    amount: 0.08,
+    margin: "0px 0px -8% 0px",
   });
 
   return (
@@ -36,16 +36,15 @@ function BuildWord({ text }: { text: string }) {
       }}
     >
       <motion.span
-        style={wordStyle}
-        initial={{ opacity: 0, color: "rgba(0,100,255,0.9)" }}
-        animate={
-          isInView
-            ? { opacity: 1, color: "rgba(255,255,255,0.92)" }
-            : { opacity: 0, color: "rgba(0,100,255,0.9)" }
-        }
+        style={{
+          ...wordStyle,
+          color: "rgba(255,255,255,0.92)",
+        }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: isInView ? 1 : 0 }}
         transition={{
-          opacity: { duration: 0.6 },
-          color: { duration: 1.2 },
+          duration: 0.85,
+          ease: [0.22, 1, 0.36, 1],
         }}
       >
         {text}
@@ -67,7 +66,7 @@ export default function WhatIBuild() {
         gap: "0.1em",
         padding: "12vh 5vw 28vh",
       }}
-      className="relative z-10"
+      className="relative z-10 w-full"
     >
       {WORDS.map((w) => (
         <BuildWord key={w} text={w} />

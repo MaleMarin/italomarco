@@ -10,6 +10,7 @@ import { useCartStore, selectCartCount } from "@/lib/cart-store";
 import { cn } from "@/lib/cn";
 import { SpringLink } from "@/components/SpringHover";
 import { SPRING_LIFT, SPRING_LIFT_TRANSITION } from "@/lib/spring-interaction";
+import { HOME_PATH, isHomePath } from "@/lib/routes";
 
 function LangButton({
   code,
@@ -43,7 +44,7 @@ function LangButton({
 export function Navbar() {
   const pathname = usePathname();
   const { homeIntroComplete } = useHeaderIntro();
-  const showHeader = pathname !== "/" || homeIntroComplete;
+  const showHeader = !isHomePath(pathname) || homeIntroComplete;
 
   const { locale, setLocale } = useLocale();
   const t = useTranslations();
@@ -59,28 +60,22 @@ export function Navbar() {
   return (
     <motion.header
       initial={false}
-      animate={
-        reduce
-          ? { opacity: showHeader ? 1 : 0 }
-          : {
-              opacity: showHeader ? 1 : 0,
-              scale: showHeader ? 1 : 0.94,
-            }
-      }
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      animate={{
+        opacity: showHeader ? 1 : 0,
+      }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       style={{
-        transformOrigin: "50% 0%",
         pointerEvents: showHeader ? "auto" : "none",
       }}
       aria-hidden={!showHeader}
       className="sticky top-0 z-[210] border-b border-carve bg-void/72 shadow-[0_10px_40px_rgba(0,0,0,0.45)] backdrop-blur-lg backdrop-saturate-150"
     >
       <nav
-        className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6 md:h-16 md:px-8"
+        className="mx-auto flex h-14 max-w-6xl flex-nowrap items-center justify-between gap-3 px-6 md:h-16 md:px-8"
         aria-label="Primary"
       >
         <SpringLink
-          href="/"
+          href={HOME_PATH}
           className="inline-flex font-sans text-[11px] font-medium uppercase tracking-widest text-mercury/45 transition-colors hover:text-mist/90 md:text-xs md:tracking-[0.35em]"
         >
           Ítalo Marco
@@ -109,7 +104,7 @@ export function Navbar() {
           </li>
         </ul>
 
-        <div className="flex items-center gap-2 md:gap-3">
+        <div className="flex shrink-0 flex-nowrap items-center gap-2 md:gap-3">
           <motion.button
             type="button"
             onClick={() => toggleCart()}
