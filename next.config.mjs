@@ -1,6 +1,24 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   /**
+   * En dev: el HTML no debe cachearse con `?v=` viejo o la página pide chunks 404 → blanco.
+   * En `next build` (production) no se aplican estas cabeceras.
+   */
+  async headers() {
+    if (process.env.NODE_ENV === "production") return [];
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store, no-cache, must-revalidate, max-age=0",
+          },
+        ],
+      },
+    ];
+  },
+  /**
    * En dev con Webpack, la caché en disco (PackFileCacheStrategy) puede fallar en macOS con
    * carpetas sincronizadas o al borrar `.next` con el servidor vivo → HTML pide chunks que
    * no existen (404 en main-app.js, layout.css, etc.). Memoria evita estado corrupto.

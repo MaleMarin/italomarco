@@ -136,6 +136,40 @@
       "play": "Play preview",
       "pause": "Pause",
       "add": "Add to rack"
+    },
+    "process": {
+      "eyebrow": "PROCESS",
+      "heading": "How I work.",
+      "hint": "Click each step to see the detail.",
+      "expandStep": "Expand step",
+      "collapseStep": "Collapse step",
+      "cta": "START A PROJECT",
+      "steps": [
+        {
+          "id": "listen",
+          "number": "01",
+          "title": "The first listen",
+          "tagline": "Understanding your world.",
+          "duration": "1–2 DAYS",
+          "detail": "References, intent, and context land in one pass. No faders yet—just a clear read of what you’re after and how the signal should behave."
+        },
+        {
+          "id": "build",
+          "number": "02",
+          "title": "The build",
+          "tagline": "From concept to sound.",
+          "duration": "3–7 DAYS",
+          "detail": "Arrangement, tone, and motion take shape. Iterations stay tight: you hear decisive moves, not endless options."
+        },
+        {
+          "id": "master",
+          "number": "03",
+          "title": "The final master",
+          "tagline": "Ready for the world.",
+          "duration": "2–3 DAYS",
+          "detail": "Leveling, punch, and format for release—streaming, club, or both—so the master leaves the desk finished."
+        }
+      ]
     }
   },
   "es": {
@@ -275,6 +309,40 @@
       "play": "Escuchar preview",
       "pause": "Pausa",
       "add": "Añadir al rack"
+    },
+    "process": {
+      "eyebrow": "PROCESO",
+      "heading": "Cómo trabajo.",
+      "hint": "Haz click en cada paso para ver el detalle.",
+      "expandStep": "Ver detalle del paso",
+      "collapseStep": "Cerrar detalle",
+      "cta": "ARRANCAR UN PROYECTO",
+      "steps": [
+        {
+          "id": "listen",
+          "number": "01",
+          "title": "La primera escucha",
+          "tagline": "Entender tu mundo.",
+          "duration": "1-2 DÍAS",
+          "detail": "Referencias, intención y contexto en una sola pasada. Aún sin tocar faders: una lectura clara de qué buscas y cómo debe comportarse la señal."
+        },
+        {
+          "id": "build",
+          "number": "02",
+          "title": "La construcción",
+          "tagline": "Del concepto al sonido.",
+          "duration": "3-7 DÍAS",
+          "detail": "Arreglo, color y movimiento toman forma. Las iteraciones son ajustadas: escuchas decisiones, no un mar de opciones."
+        },
+        {
+          "id": "master",
+          "number": "03",
+          "title": "El master final",
+          "tagline": "Listo para el mundo.",
+          "duration": "2-3 DÍAS",
+          "detail": "Nivel, punch y formato para salida—streaming, club o ambos—para que el master salga del escritorio cerrado."
+        }
+      ]
     }
   }
 }

@@ -1,5 +1,5 @@
-import { StoreSection } from "@/components/store/StoreSection";
+import { ProcessPage } from "@/components/process/ProcessPage";
 
 export default function StorePage() {
-  return <StoreSection />;
+  return <ProcessPage />;
 }
