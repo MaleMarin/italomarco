@@ -12,6 +12,7 @@ export default function About() {
     offset: ["start end", "end start"],
   });
   const photoY = useTransform(scrollYProgress, [0, 1], ["-8%", "8%"]);
+  const photoScale = useTransform(scrollYProgress, [0, 1], [1, 1.08]);
 
   return (
     <section
@@ -35,6 +36,7 @@ export default function About() {
           y: photoY,
           zIndex: 0,
           minHeight: "120%",
+          scale: photoScale,
         }}
       >
         <img
@@ -100,25 +102,35 @@ export default function About() {
             marginBottom: "40px",
           }}
         >
-          El productor
+          Productor musical
         </motion.span>
 
-        <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
-          style={{
-            fontFamily: '"DM Sans", sans-serif',
-            fontWeight: 100,
-            fontSize: "clamp(80px, 16vw, 220px)",
-            letterSpacing: "-0.03em",
-            lineHeight: 0.9,
-            color: "rgba(255,255,255,0.92)",
-            margin: 0,
-          }}
-        >
-          El riesgo.
-        </motion.h2>
+        <div style={{ overflow: "hidden" }}>
+          {"El riesgo.".split("").map((char, i) => (
+            <motion.span
+              key={i}
+              initial={{ opacity: 0, y: 40 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{
+                duration: 0.5,
+                ease: [0.16, 1, 0.3, 1],
+                delay: 0.2 + i * 0.04,
+              }}
+              style={{
+                display: "inline-block",
+                fontFamily: '"DM Sans", sans-serif',
+                fontWeight: 100,
+                fontSize: "clamp(80px, 16vw, 220px)",
+                letterSpacing: "-0.03em",
+                lineHeight: 0.9,
+                color: "rgba(255,255,255,0.92)",
+                whiteSpace: "pre",
+              }}
+            >
+              {char}
+            </motion.span>
+          ))}
+        </div>
       </div>
     </section>
   );
