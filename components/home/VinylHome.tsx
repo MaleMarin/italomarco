@@ -176,7 +176,16 @@ export default function VinylHome({ children }: { children: ReactNode }) {
           aria-label="Pilares"
         >
           <div className="flex flex-col items-center">
-            <p className="flex flex-wrap justify-center text-center text-[9px] font-sans uppercase tracking-[0.85em] text-white/40">
+            <p
+              className="flex flex-wrap justify-center text-center uppercase"
+              style={{
+                fontFamily: '"DM Sans", "Helvetica Neue", Arial, sans-serif',
+                fontWeight: 200,
+                fontSize: "10px",
+                letterSpacing: "0.3em",
+                color: "rgba(255,255,255,0.25)",
+              }}
+            >
               {t.homeFooter.split("").map((char, i) => (
                 <motion.span
                   key={`${char}-${i}`}
