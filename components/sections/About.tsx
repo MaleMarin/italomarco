@@ -20,7 +20,35 @@ export default function About() {
         overflow: "hidden",
       }}
     >
-      {/* LEFT — text */}
+      {/* LEFT — photo breathing */}
+      <div style={{ position: "relative", overflow: "hidden" }}>
+        {/* Dark overlay */}
+        <div aria-hidden style={{
+          position: "absolute", inset: 0, zIndex: 1,
+          background: "linear-gradient(to right, rgba(2,2,2,0.6) 0%, rgba(2,2,2,0.1) 100%)",
+          pointerEvents: "none",
+        }} />
+
+        <motion.div
+          style={{ position: "absolute", inset: "-5%", y: photoY }}
+          animate={{ scale: [1, 1.1, 1] }}
+          transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <img
+            src="/images/italo-marco.png"
+            alt="Italo Marco"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              objectPosition: "center top",
+              filter: "grayscale(100%) brightness(0.55) contrast(1.2)",
+            }}
+          />
+        </motion.div>
+      </div>
+
+      {/* RIGHT — text */}
       <div style={{
         display: "flex",
         flexDirection: "column",
@@ -68,40 +96,12 @@ export default function About() {
         </div>
       </div>
 
-      {/* RIGHT — photo breathing */}
-      <div style={{ position: "relative", overflow: "hidden" }}>
-        {/* Dark overlay */}
-        <div aria-hidden style={{
-          position: "absolute", inset: 0, zIndex: 1,
-          background: "linear-gradient(to right, rgba(2,2,2,0.6) 0%, rgba(2,2,2,0.1) 100%)",
-          pointerEvents: "none",
-        }} />
-
-        <motion.div
-          style={{ position: "absolute", inset: "-5%", y: photoY }}
-          animate={{ scale: [1, 1.04, 1] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <img
-            src="/images/italo-marco.png"
-            alt="Italo Marco"
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              objectPosition: "center top",
-              filter: "grayscale(100%) brightness(0.55) contrast(1.2)",
-            }}
-          />
-        </motion.div>
-      </div>
-
       <style>{`
         @media (max-width: 768px) {
           #sobre-italo {
             grid-template-columns: 1fr !important;
           }
-          #sobre-italo > div:last-child {
+          #sobre-italo > div:first-child {
             min-height: 50vh;
           }
         }
