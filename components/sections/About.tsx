@@ -1,10 +1,11 @@
 "use client";
 
 import { useRef } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useInView, useScroll, useTransform } from "framer-motion";
 
 export default function About() {
   const ref = useRef<HTMLElement | null>(null);
+  const inView = useInView(ref, { once: true, margin: "-12% 0px" });
 
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -37,7 +38,7 @@ export default function About() {
         }}
       >
         <img
-          src="/images/italo-marco.png"
+          src="/marco.italo2.png"
           alt=""
           aria-hidden
           style={{
@@ -103,24 +104,20 @@ export default function About() {
         </motion.span>
 
         <motion.h2
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.08 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
           style={{
             fontFamily: '"DM Sans", sans-serif',
             fontWeight: 100,
-            fontSize: "clamp(28px, 4.5vw, 60px)",
-            letterSpacing: "-0.02em",
-            lineHeight: 1.2,
-            color: "rgba(255,255,255,0.94)",
-            margin: "0 0 20px",
+            fontSize: "clamp(80px, 16vw, 220px)",
+            letterSpacing: "-0.03em",
+            lineHeight: 0.9,
+            color: "rgba(255,255,255,0.92)",
+            margin: 0,
           }}
         >
-          Trabajo donde termina
-          <br />
-          la referencia y empieza
-          <br />
-          el riesgo.
+          El riesgo.
         </motion.h2>
       </div>
     </section>
