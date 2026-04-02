@@ -88,7 +88,6 @@
         "body": "I'll read what you sent and reply by email.",
         "again": "Another message"
       },
-      "footnote": "No backend here yet—this fires your mail client with the draft. Prefer it that way until the room is wired.",
       "social": {
         "instagram": "Instagram",
         "tiktok": "TikTok",
@@ -261,7 +260,6 @@
         "body": "Leo lo que enviaste y te respondo por correo.",
         "again": "Otra señal"
       },
-      "footnote": "Aún sin backend: esto abre tu cliente de correo con el borrador. Así hasta que cablemos la sala.",
       "social": {
         "instagram": "Instagram",
         "tiktok": "TikTok",

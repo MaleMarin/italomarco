@@ -6,9 +6,9 @@ import { useTranslations } from "@/lib/useTranslations";
 
 const PILLAR_HREFS = ["#produccion", "#mezcla", "#identidad"] as const;
 
-/** Tras el intro del vinilo: respiro antes de la primera palabra (no chocar con la frase del canvas). */
-const PAUSE_AFTER_INTRO_S = 0.62;
-const PAUSE_AFTER_INTRO_REDUCED_S = 0.12;
+/** Tras el intro: mínimo — las tres palabras al instante. */
+const PAUSE_AFTER_INTRO_S = 0.02;
+const PAUSE_AFTER_INTRO_REDUCED_S = 0.02;
 
 const hidden = { opacity: 0, filter: "blur(18px)", y: 24 };
 const visible = { opacity: 1, filter: "blur(0px)", y: 0 };
@@ -33,9 +33,9 @@ function Word({
       initial={hidden}
       animate={introDone ? visible : hidden}
       transition={{
-        duration: reduceMotion ? 0.4 : 0.9,
+        duration: reduceMotion ? 0.28 : 0.52,
         ease: [0.16, 1, 0.3, 1],
-        delay: introDone ? baseDelay + index * 0.18 : 0,
+        delay: introDone ? baseDelay + index * 0.02 : 0,
       }}
       whileHover={{
         color: "#0052FF",

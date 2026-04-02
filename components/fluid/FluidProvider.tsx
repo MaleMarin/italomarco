@@ -39,9 +39,29 @@ export function useFluidParallax() {
   return useContext(FluidContext);
 }
 
-/** Cursor personalizado desactivado: puntero del sistema (default / pointer en enlaces). */
+/**
+ * Cursor fluido azul: activo con puntero fino; desactivado con reduced motion o coarse pointer.
+ */
 function useFluidEnabled() {
-  return false;
+  const [enabled, setEnabled] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mqFine = window.matchMedia("(pointer: fine)");
+    const mqReduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => {
+      setEnabled(mqFine.matches && !mqReduce.matches);
+    };
+    sync();
+    mqFine.addEventListener("change", sync);
+    mqReduce.addEventListener("change", sync);
+    return () => {
+      mqFine.removeEventListener("change", sync);
+      mqReduce.removeEventListener("change", sync);
+    };
+  }, []);
+
+  return enabled;
 }
 
 const GLOW_SIZE = 1020;
@@ -350,7 +370,7 @@ export function FluidProvider({ children }: { children: ReactNode }) {
         <>
           <motion.div
             aria-hidden
-            className="pointer-events-none fixed inset-0 z-[3]"
+            className="pointer-events-none fixed inset-0 z-[262]"
             animate={{ opacity: cursorHidden ? 0 : 1 }}
             transition={{ duration: 0.2 }}
           >
@@ -363,7 +383,7 @@ export function FluidProvider({ children }: { children: ReactNode }) {
           </motion.div>
           <motion.div
             aria-hidden
-            className="pointer-events-none fixed inset-0 z-[219] bg-transparent"
+            className="pointer-events-none fixed inset-0 z-[263] bg-transparent"
             style={{ backgroundColor: "transparent" }}
             animate={{ opacity: cursorHidden ? 0 : 1 }}
             transition={{ duration: 0.15 }}

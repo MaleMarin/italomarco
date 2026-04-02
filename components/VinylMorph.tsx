@@ -211,7 +211,7 @@ export default function VinylMorph({
         return sum;
       };
 
-      let heroFontPx = Math.min(108, Math.max(42, Math.round(W * 0.082)));
+      let heroFontPx = Math.min(120, Math.max(44, Math.round(W * 0.095)));
       while (heroFontPx >= 30 && rowTotal(heroFontPx) > availRow) {
         heroFontPx -= 2;
       }
@@ -447,7 +447,7 @@ export default function VinylMorph({
 
     /**
      * Apertura desde el medio: máscaras negras arriba/abajo;
-     * fade-in primero línea pequeña, después la segunda (con stagger en palabras hero).
+     * fade-in primero palabras hero (grandes), después la línea pequeña (stagger entre hero).
      */
     const drawPhraseReveal = (
       opacity: number,
@@ -478,17 +478,6 @@ export default function VinylMorph({
       ctx.textBaseline = "middle";
       ctx.fillStyle = `rgba(${LETTER_ACCENT}, 0.93)`;
 
-      const subWe = fadeLine1;
-      if (subWe > 0.02) {
-        const drop = (1 - subWe) * (m.subFontPx * 0.09);
-        ctx.save();
-        ctx.globalAlpha = baseA * subWe * 0.88;
-        ctx.font = `${PHRASE_WEIGHT_PRIMARY} ${m.subFontPx}px ${PHRASE_FONT_STACK}`;
-        ctx.letterSpacing = phraseLetterSpacingPx(m.subFontPx);
-        ctx.fillText(PHRASE_SUB_LINE, m.subX, m.subY + drop);
-        ctx.restore();
-      }
-
       for (let i = 0; i < PHRASE_HERO_WORDS.length; i++) {
         const we = heroWordFade(fadeLine2, i);
         if (we < 0.015) continue;
@@ -503,15 +492,26 @@ export default function VinylMorph({
         ctx.restore();
       }
 
+      const subWe = fadeLine1;
+      if (subWe > 0.02) {
+        const drop = (1 - subWe) * (m.subFontPx * 0.09);
+        ctx.save();
+        ctx.globalAlpha = baseA * subWe * 0.88;
+        ctx.font = `${PHRASE_WEIGHT_PRIMARY} ${m.subFontPx}px ${PHRASE_FONT_STACK}`;
+        ctx.letterSpacing = phraseLetterSpacingPx(m.subFontPx);
+        ctx.fillText(PHRASE_SUB_LINE, m.subX, m.subY + drop);
+        ctx.restore();
+      }
+
       ctx.restore();
     };
 
-    /** La frase (entrada) puede empezar este ms antes del morph del disco — hero lee antes. */
-    const PHRASE_HEAD_START_MS = 500;
+    /** La frase (entrada) puede empezar este ms antes del morph del disco — más alto = antes en pantalla. */
+    const PHRASE_HEAD_START_MS = 760;
     const phraseWindowStart = morphStart - PHRASE_HEAD_START_MS;
 
-    /** La frase empieza a salir este tiempo antes del fin del hold (misma hora de cierre total). */
-    const FADE_LEAD_MS = 500;
+    /** Fade-out en cuanto cierra el morph (sin colchón de hold largo). */
+    const FADE_LEAD_MS = 2000;
     const fadeOutStart = Math.max(
       morphEndEff,
       morphEndEff + tHold - FADE_LEAD_MS,
@@ -551,7 +551,7 @@ export default function VinylMorph({
          */
         const ripplePhase = el * RIPPLE_DRIFT_PER_MS;
 
-        const nameIntroRaw = Math.min(1, el / 160);
+        const nameIntroRaw = Math.min(1, el / 260);
         const nameIntro = smootherstep01(nameIntroRaw);
 
         if (el < phraseWindowStart) {
@@ -612,7 +612,7 @@ export default function VinylMorph({
           /** Progreso 0→1 a lo largo del morph: una sola curva suave (sin torres de smoothstep). */
           const uMorph = Math.min(
             1,
-            appearPhraseElapsed / Math.max(1, tMorph * 0.98),
+            appearPhraseElapsed / Math.max(1, tMorph * 0.82),
           );
           const phraseGate = cosineEase01(cosineEase01(uMorph));
           /** Encaje con la disolución del disco; antes de morphStart el texto puede leerse sobre plato entero. */
@@ -630,13 +630,16 @@ export default function VinylMorph({
           const splitGapPx = open * maxG;
           /** Línea chica primero, hero después — solapamiento suave, mismas bases de tiempo. */
           const uLines = cosineEase01(
-            Math.min(1, appearPhraseElapsed / Math.max(520, tMorph * 0.88)),
+            Math.min(1, appearPhraseElapsed / Math.max(340, tMorph * 0.68)),
           );
-          const fade1 = prefersReducedMotion ? appear : cosineEase01(uLines / 0.52);
+          /** Palabras hero grandes primero; subtítulo poco después. */
           const fade2 = prefersReducedMotion
             ? appear
+            : cosineEase01(uLines / 0.44);
+          const fade1 = prefersReducedMotion
+            ? appear
             : cosineEase01(
-                Math.max(0, uLines - 0.1) / Math.max(0.35, 0.62 - 0.1),
+                Math.max(0, uLines - 0.12) / Math.max(0.28, 0.78 - 0.12),
               );
 
           /** Últimos instantes del morph: igual que hold → cero salto al cambiar de rama. */

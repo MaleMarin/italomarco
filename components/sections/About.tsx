@@ -21,7 +21,10 @@ export default function About() {
       }}
     >
       {/* LEFT — photo breathing */}
-      <div style={{ position: "relative", overflow: "hidden" }}>
+      <div
+        className="about-photo-panel"
+        style={{ position: "relative", overflow: "hidden" }}
+      >
         {/* Dark overlay */}
         <div aria-hidden style={{
           position: "absolute", inset: 0, zIndex: 1,
@@ -101,7 +104,7 @@ export default function About() {
           #sobre-italo {
             grid-template-columns: 1fr !important;
           }
-          #sobre-italo > div:first-child {
+          #sobre-italo .about-photo-panel {
             min-height: 50vh;
           }
         }

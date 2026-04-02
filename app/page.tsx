@@ -4,12 +4,11 @@ import { motion } from "framer-motion";
 import { ContactSection } from "@/components/ContactSection";
 import VinylHome from "@/components/home/VinylHome";
 import About from "@/components/sections/About";
-import Process   from "@/components/sections/Process";
 import WhatIBuild from "@/components/sections/WhatIBuild";
 import Services from "@/components/sections/Services";
 
 /**
- * Orden: WhatIBuild → Services → Process → About → Contact.
+ * Orden: WhatIBuild → Services → About → Contact. (El proceso vive en /store.)
  */
 export default function HomePage() {
   return (
@@ -20,7 +19,6 @@ export default function HomePage() {
       >
         <WhatIBuild />
         <Services />
-        <Process />
         <About />
         <ContactSection />
         <footer

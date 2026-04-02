@@ -219,12 +219,6 @@ export function ContactSection() {
                       {c.submit}
                     </motion.button>
                   </div>
-                  <p
-                    className="text-sm leading-relaxed text-mercury/50"
-                    style={contactType}
-                  >
-                    {c.footnote}
-                  </p>
                 </motion.form>
               )}
             </AnimatePresence>
