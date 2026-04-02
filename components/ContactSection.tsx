@@ -2,28 +2,19 @@
 
 import { useState, type FormEvent } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { Instagram } from "lucide-react";
 import { useTranslations } from "@/lib/useTranslations";
 import { SPRING_LIFT, SPRING_LIFT_TRANSITION } from "@/lib/spring-interaction";
 
-function TikTokIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden
-    >
-      <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48.04 2.96.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />
-    </svg>
-  );
-}
+const contactType = {
+  fontFamily: '"DM Sans", "Helvetica Neue", Arial, sans-serif',
+  fontWeight: 200 as const,
+};
 
 const inputClass =
-  "mt-2 w-full border border-carve bg-mist/[0.025] px-4 py-3 font-sans text-base tracking-[0.01em] text-mist placeholder:text-mercury/35 outline-none transition-colors focus:border-electric/45 focus:ring-1 focus:ring-electric/20";
+  "mt-2 w-full border border-carve bg-mist/[0.025] px-4 py-3 text-base tracking-[0.01em] text-mist placeholder:text-mercury/35 outline-none transition-colors focus:border-electric/45 focus:ring-1 focus:ring-electric/20";
 
 const labelClass =
-  "font-sans text-[11px] font-medium uppercase tracking-[0.2em] text-mercury/65";
+  "text-[11px] uppercase tracking-[0.2em] text-mercury/65";
 
 export function ContactSection() {
   const t = useTranslations();
@@ -75,60 +66,37 @@ export function ContactSection() {
           viewport={{ once: true }}
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         >
-          <p className="font-sans text-xs font-medium uppercase tracking-[0.3em] text-electric/80">
+          <p
+            className="text-xs uppercase tracking-[0.3em] text-electric/80"
+            style={contactType}
+          >
             {c.eyebrow}
           </p>
           <h2
             id="contact-headline"
-            className="mt-4 font-serif text-2xl font-normal tracking-[0.02em] text-mist md:text-3xl lg:text-[2rem] lg:leading-snug"
+            className="mt-4 text-2xl tracking-[0.02em] text-mist md:text-3xl lg:text-[2rem] lg:leading-snug"
+            style={contactType}
           >
             {c.headline}
           </h2>
-          <p className="mt-5 font-sans text-base leading-relaxed tracking-[0.015em] text-mercury/88 md:text-[1.05rem]">
+          <p
+            className="mt-5 text-base leading-relaxed tracking-[0.015em] text-mercury/88 md:text-[1.05rem]"
+            style={contactType}
+          >
             {c.lede}
           </p>
-          <p className="mt-8 font-sans text-base leading-relaxed text-mercury/72">
+          <p
+            className="mt-8 text-base leading-relaxed text-mercury/72"
+            style={contactType}
+          >
             {c.preamble}
           </p>
-          <p className="mt-6 border-l border-electric/40 pl-5 font-sans text-base leading-relaxed text-mercury/65">
+          <p
+            className="mt-6 border-l border-electric/40 pl-5 text-base leading-relaxed text-mercury/65"
+            style={contactType}
+          >
             {c.aside}
           </p>
-          <div className="mt-10">
-            <ul className="flex flex-wrap items-center gap-2">
-              <li>
-                <motion.a
-                  href={c.social.instagramUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={c.social.instagram}
-                  className="group inline-flex h-11 w-11 items-center justify-center rounded-full border border-carve text-mercury transition-colors hover:border-electric/45 hover:text-electric"
-                  style={{ display: "inline-flex" }}
-                  whileHover={reduce ? undefined : SPRING_LIFT}
-                  transition={SPRING_LIFT_TRANSITION}
-                >
-                  <Instagram
-                    className="h-[1.25rem] w-[1.25rem] shrink-0 opacity-80 transition-opacity group-hover:opacity-100"
-                    strokeWidth={1.75}
-                    aria-hidden
-                  />
-                </motion.a>
-              </li>
-              <li>
-                <motion.a
-                  href={c.social.tiktokUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={c.social.tiktok}
-                  className="group inline-flex h-11 w-11 items-center justify-center rounded-full border border-carve text-mercury transition-colors hover:border-electric/45 hover:text-electric"
-                  style={{ display: "inline-flex" }}
-                  whileHover={reduce ? undefined : SPRING_LIFT}
-                  transition={SPRING_LIFT_TRANSITION}
-                >
-                  <TikTokIcon className="h-[1.2rem] w-[1.2rem] shrink-0 opacity-80 transition-opacity group-hover:opacity-100" />
-                </motion.a>
-              </li>
-            </ul>
-          </div>
         </motion.div>
 
         <motion.div
@@ -152,16 +120,20 @@ export function ContactSection() {
                   exit={{ opacity: 0, y: -6 }}
                   className="py-8 text-center md:py-12"
                 >
-                  <p className="font-serif text-xl text-mist md:text-2xl">
+                  <p className="text-xl text-mist md:text-2xl" style={contactType}>
                     {c.success.title}
                   </p>
-                  <p className="mt-4 font-sans text-base text-mercury/75">
+                  <p
+                    className="mt-4 text-base text-mercury/75"
+                    style={contactType}
+                  >
                     {c.success.body}
                   </p>
                   <motion.button
                     type="button"
                     onClick={() => setSent(false)}
-                    className="mt-8 font-sans text-xs uppercase tracking-[0.2em] text-electric hover:text-mist transition-colors"
+                    className="mt-8 text-xs uppercase tracking-[0.2em] text-electric hover:text-mist transition-colors"
+                    style={contactType}
                     whileHover={reduce ? undefined : SPRING_LIFT}
                     transition={SPRING_LIFT_TRANSITION}
                   >
@@ -179,7 +151,7 @@ export function ContactSection() {
                   className="space-y-6"
                 >
                   <div>
-                    <label htmlFor="studio-name" className={labelClass}>
+                    <label htmlFor="studio-name" className={labelClass} style={contactType}>
                       {c.fields.name.label}
                     </label>
                     <input
@@ -189,11 +161,12 @@ export function ContactSection() {
                       autoComplete="name"
                       placeholder={c.fields.name.placeholder}
                       className={inputClass}
+                      style={contactType}
                       required
                     />
                   </div>
                   <div>
-                    <label htmlFor="studio-email" className={labelClass}>
+                    <label htmlFor="studio-email" className={labelClass} style={contactType}>
                       {c.fields.email.label}
                     </label>
                     <input
@@ -203,11 +176,12 @@ export function ContactSection() {
                       autoComplete="email"
                       placeholder={c.fields.email.placeholder}
                       className={inputClass}
+                      style={contactType}
                       required
                     />
                   </div>
                   <div>
-                    <label htmlFor="studio-intent" className={labelClass}>
+                    <label htmlFor="studio-intent" className={labelClass} style={contactType}>
                       {c.fields.intent.label}
                     </label>
                     <textarea
@@ -216,11 +190,12 @@ export function ContactSection() {
                       rows={4}
                       placeholder={c.fields.intent.placeholder}
                       className={`${inputClass} resize-y min-h-[7rem]`}
+                      style={contactType}
                       required
                     />
                   </div>
                   <div>
-                    <label htmlFor="studio-ref" className={labelClass}>
+                    <label htmlFor="studio-ref" className={labelClass} style={contactType}>
                       {c.fields.reference.label}
                     </label>
                     <input
@@ -230,19 +205,24 @@ export function ContactSection() {
                       inputMode="url"
                       placeholder={c.fields.reference.placeholder}
                       className={inputClass}
+                      style={contactType}
                     />
                   </div>
                   <div className="flex flex-col gap-4 pt-2 sm:flex-row sm:items-center sm:justify-between">
                     <motion.button
                       type="submit"
-                      className="inline-flex items-center justify-center border border-electric/80 bg-electric/10 px-8 py-3 font-sans text-xs font-semibold uppercase tracking-[0.2em] text-mist transition-colors hover:bg-electric/20 hover:border-electric"
+                      className="inline-flex items-center justify-center border border-electric/80 bg-electric/10 px-8 py-3 text-xs uppercase tracking-[0.2em] text-mist transition-colors hover:bg-electric/20 hover:border-electric"
+                      style={contactType}
                       whileHover={reduce ? undefined : SPRING_LIFT}
                       transition={SPRING_LIFT_TRANSITION}
                     >
                       {c.submit}
                     </motion.button>
                   </div>
-                  <p className="font-sans text-sm leading-relaxed text-mercury/50">
+                  <p
+                    className="text-sm leading-relaxed text-mercury/50"
+                    style={contactType}
+                  >
                     {c.footnote}
                   </p>
                 </motion.form>
