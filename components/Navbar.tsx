@@ -54,7 +54,7 @@ export function Navbar() {
   const reduce = useReducedMotion();
 
   const linkClass =
-    "font-sans text-[10px] tracking-widest text-mercury/30 transition-colors hover:text-mercury/55";
+    "font-sans text-[13px] md:text-[15px] tracking-wide md:tracking-wider text-mercury/40 transition-colors hover:text-mercury/65";
 
   return (
     <motion.header
@@ -84,11 +84,6 @@ export function Navbar() {
           <li>
             <SpringLink href="/proyectos" className={linkClass}>
               Escuchar
-            </SpringLink>
-          </li>
-          <li>
-            <SpringLink href="/services" className={linkClass}>
-              Construir
             </SpringLink>
           </li>
           <li>
@@ -168,15 +163,6 @@ export function Navbar() {
                 onClick={() => setOpen(false)}
               >
                 Escuchar
-              </SpringLink>
-            </li>
-            <li>
-              <SpringLink
-                href="/services"
-                className={linkClass}
-                onClick={() => setOpen(false)}
-              >
-                Construir
               </SpringLink>
             </li>
             <li>
