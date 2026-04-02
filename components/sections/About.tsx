@@ -106,7 +106,9 @@ export default function About() {
         </motion.span>
 
         <div style={{ overflow: "hidden" }}>
-          {"El riesgo.".split("").map((char, i) => (
+          {"Trabajo donde termina la referencia y empieza el riesgo."
+            .split("")
+            .map((char, i) => (
             <motion.span
               key={i}
               initial={{ opacity: 0, y: 40 }}
@@ -120,7 +122,7 @@ export default function About() {
                 display: "inline-block",
                 fontFamily: '"DM Sans", sans-serif',
                 fontWeight: 100,
-                fontSize: "clamp(80px, 16vw, 220px)",
+                fontSize: "clamp(32px, 5vw, 72px)",
                 letterSpacing: "-0.03em",
                 lineHeight: 0.9,
                 color: "rgba(255,255,255,0.92)",
