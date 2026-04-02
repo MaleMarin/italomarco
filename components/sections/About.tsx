@@ -1,14 +1,10 @@
 "use client";
 
 import { useRef } from "react";
-import { motion, useInView, useScroll, useTransform } from "framer-motion";
-
-/** Imagen en `public/`; si añades `public/images/italo-marco.png`, cambia la ruta aquí. */
-const ABOUT_PHOTO_SRC = "/marco.italo.svg";
+import { motion, useScroll, useTransform } from "framer-motion";
 
 export default function About() {
   const ref = useRef<HTMLElement | null>(null);
-  const inView = useInView(ref, { once: true, margin: "-10%" });
 
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -28,6 +24,7 @@ export default function About() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        backgroundColor: "#080808",
       }}
     >
       <motion.div
@@ -36,13 +33,16 @@ export default function About() {
           inset: "-10%",
           y: photoY,
           zIndex: 0,
+          minHeight: "120%",
         }}
       >
         <img
-          src={ABOUT_PHOTO_SRC}
+          src="/images/italo-marco.png"
           alt=""
           aria-hidden
           style={{
+            position: "absolute",
+            inset: 0,
             width: "100%",
             height: "100%",
             objectFit: "cover",
@@ -60,7 +60,7 @@ export default function About() {
           zIndex: 1,
           pointerEvents: "none",
           background:
-            "linear-gradient(to bottom, rgba(2,2,2,0.5) 0%, rgba(2,2,2,0.3) 50%, rgba(2,2,2,0.7) 100%)",
+            "linear-gradient(to bottom, rgba(2,2,2,0.45) 0%, rgba(2,2,2,0.25) 50%, rgba(2,2,2,0.65) 100%)",
         }}
       />
       <div
@@ -86,7 +86,7 @@ export default function About() {
       >
         <motion.span
           initial={{ opacity: 0 }}
-          animate={inView ? { opacity: 1 } : {}}
+          animate={{ opacity: 1 }}
           transition={{ duration: 0.6 }}
           style={{
             fontFamily: '"DM Sans", sans-serif',
@@ -94,7 +94,7 @@ export default function About() {
             fontSize: "10px",
             letterSpacing: "0.4em",
             textTransform: "uppercase",
-            color: "rgba(255,255,255,0.2)",
+            color: "rgba(255,255,255,0.28)",
             display: "block",
             marginBottom: "40px",
           }}
@@ -103,16 +103,16 @@ export default function About() {
         </motion.span>
 
         <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.08 }}
           style={{
             fontFamily: '"DM Sans", sans-serif',
             fontWeight: 100,
             fontSize: "clamp(28px, 4.5vw, 60px)",
             letterSpacing: "-0.02em",
             lineHeight: 1.2,
-            color: "rgba(255,255,255,0.92)",
+            color: "rgba(255,255,255,0.94)",
             margin: "0 0 20px",
           }}
         >
@@ -122,26 +122,6 @@ export default function About() {
           <br />
           el riesgo.
         </motion.h2>
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={inView ? { opacity: 1 } : {}}
-          transition={{ duration: 0.7, delay: 0.3 }}
-          style={{
-            fontFamily: '"DM Sans", sans-serif',
-            fontWeight: 200,
-            fontSize: "clamp(13px, 1.4vw, 16px)",
-            color: "rgba(255,255,255,0.36)",
-            lineHeight: 1.7,
-            margin: "0 0 48px",
-            letterSpacing: "0.02em",
-            textShadow: "0 0 40px rgba(0,0,0,0.9), 0 2px 20px rgba(0,0,0,0.75)",
-          }}
-        >
-          Produzco desde el instinto.
-          <br />
-          Termino desde el oficio.
-        </motion.p>
       </div>
     </section>
   );
