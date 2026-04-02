@@ -4,7 +4,6 @@ import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useHeaderIntro } from "@/components/Providers";
-import { useTranslations } from "@/lib/useTranslations";
 
 import {
   motion,
@@ -50,7 +49,6 @@ const skipVinylIntro = process.env.NEXT_PUBLIC_SKIP_VINYL_INTRO === "true";
 
 /** Shell de la ruta `/`: intro de vinilo, parallax y pie; el cuerpo lo compone `app/page.tsx`. */
 export default function VinylHome({ children }: { children: ReactNode }) {
-  const t = useTranslations();
   const [hideVinyl, setHideVinyl] = useState(skipVinylIntro);
   const { setHomeIntroComplete } = useHeaderIntro();
   const introNotifiedRef = useRef(false);
@@ -170,94 +168,6 @@ export default function VinylHome({ children }: { children: ReactNode }) {
         </motion.div>
 
         {children}
-
-        <footer
-          className="relative z-10 flex justify-center px-6 pb-10 pt-6 md:pb-12"
-          aria-label="Pilares"
-        >
-          <div className="flex flex-col items-center">
-            <p
-              className="flex flex-wrap justify-center text-center uppercase"
-              style={{
-                fontFamily: '"DM Sans", "Helvetica Neue", Arial, sans-serif',
-                fontWeight: 200,
-                fontSize: "10px",
-                letterSpacing: "0.3em",
-                color: "rgba(255,255,255,0.25)",
-              }}
-            >
-              {t.homeFooter.split("").map((char, i) => (
-                <motion.span
-                  key={`${char}-${i}`}
-                  className="inline-block"
-                  whileHover={
-                    reduce
-                      ? undefined
-                      : {
-                          y: -4,
-                          color: "rgba(249,249,249,0.75)",
-                          transition: {
-                            type: "spring",
-                            stiffness: 400,
-                            damping: 16,
-                          },
-                        }
-                  }
-                >
-                  {char === " " ? "\u00a0" : char}
-                </motion.span>
-              ))}
-            </p>
-            <div
-              style={{
-                display: "flex",
-                gap: "24px",
-                justifyContent: "center",
-                marginTop: "16px",
-              }}
-            >
-              {[
-                {
-                  label: "Spotify",
-                  href: "https://open.spotify.com/intl-es/artist/6ZHmI6dQAtHX8h7RO8VcZX?si=vtvgNyE3TEmGHszCAAUPVQ",
-                },
-                {
-                  label: "Instagram",
-                  href: "https://www.instagram.com/italomarcoo/?hl=es",
-                },
-                {
-                  label: "TikTok",
-                  href: "https://www.tiktok.com/@italomarco1?lang=es-419",
-                },
-              ].map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    fontFamily: '"DM Sans", sans-serif',
-                    fontWeight: 200,
-                    fontSize: "9px",
-                    letterSpacing: "0.2em",
-                    textTransform: "uppercase",
-                    color: "rgba(255,255,255,0.2)",
-                    textDecoration: "none",
-                    transition: "color 0.3s",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.color = "rgba(255,255,255,0.7)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.color = "rgba(255,255,255,0.2)")
-                  }
-                >
-                  {link.label}
-                </a>
-              ))}
-            </div>
-          </div>
-        </footer>
       </div>
 
       {!hideVinyl ? (
