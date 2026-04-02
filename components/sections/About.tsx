@@ -37,6 +37,7 @@ export default function About() {
           zIndex: 0,
           minHeight: "120%",
           scale: photoScale,
+          mixBlendMode: "luminosity",
         }}
       >
         <img
@@ -50,7 +51,7 @@ export default function About() {
             height: "100%",
             objectFit: "cover",
             objectPosition: "center top",
-            filter: "grayscale(100%) brightness(0.28)",
+            filter: "grayscale(100%) brightness(0.18) contrast(1.3)",
           }}
         />
       </motion.div>
@@ -105,7 +106,15 @@ export default function About() {
           Productor musical
         </motion.span>
 
-        <div style={{ overflow: "hidden" }}>
+        <div
+          style={{
+            overflow: "hidden",
+            wordBreak: "keep-all",
+            whiteSpace: "normal",
+            maxWidth: "600px",
+            textAlign: "left",
+          }}
+        >
           {"Trabajo donde termina la referencia y empieza el riesgo."
             .split("")
             .map((char, i) => (
@@ -122,7 +131,7 @@ export default function About() {
                 display: "inline-block",
                 fontFamily: '"DM Sans", sans-serif',
                 fontWeight: 100,
-                fontSize: "clamp(32px, 5vw, 72px)",
+                fontSize: "clamp(24px, 3.5vw, 52px)",
                 letterSpacing: "-0.03em",
                 lineHeight: 0.9,
                 color: "rgba(255,255,255,0.92)",
