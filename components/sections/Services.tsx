@@ -1,6 +1,7 @@
 "use client";
 import { useRef, useEffect, useState } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
+import { CONTACT_EMAIL } from "@/lib/contact-email";
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -301,7 +302,7 @@ function TrackRow({
         {hovered && (
           <motion.a
             key="cta"
-            href="mailto:hola@italomarco.com"
+            href={`mailto:${CONTACT_EMAIL}`}
             initial={{ opacity: 0, x: 8 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 8 }}

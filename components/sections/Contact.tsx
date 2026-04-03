@@ -2,6 +2,7 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
+import { CONTACT_EMAIL } from "@/lib/contact-email";
 
 const DM = '"DM Sans", sans-serif';
 
@@ -70,7 +71,7 @@ export default function Contact() {
         <motion.form
           {...enter(2)}
           className="mt-8 w-full max-w-[480px]"
-          action="mailto:hola@italomarco.com"
+          action={`mailto:${CONTACT_EMAIL}`}
           method="post"
           encType="text/plain"
         >
@@ -130,7 +131,7 @@ export default function Contact() {
           className="flex w-full max-w-[480px] flex-wrap justify-center gap-3"
         >
           <a
-            href="mailto:hola@italomarco.com"
+            href={`mailto:${CONTACT_EMAIL}`}
             className="flex items-center gap-2 rounded-lg border-[0.5px] border-[rgba(255,255,255,0.1)] bg-transparent px-5 py-3 text-[13px] font-extralight text-[rgba(255,255,255,0.5)] no-underline transition-[border-color,color] duration-300 hover:border-[rgba(255,255,255,0.3)] hover:text-[rgba(255,255,255,0.9)]"
             style={{ fontFamily: DM, fontWeight: 200 }}
           >
@@ -148,7 +149,7 @@ export default function Contact() {
               <rect x="3" y="5" width="18" height="14" rx="2" />
               <path d="M3 7l9 6 9-6" />
             </svg>
-            hola@italomarco.com
+            {CONTACT_EMAIL}
           </a>
           <a
             href="https://wa.me/56953330472"

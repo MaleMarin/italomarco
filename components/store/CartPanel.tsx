@@ -10,6 +10,7 @@ import {
   selectCartTotal,
   selectCartCount,
 } from "@/lib/cart-store";
+import { CONTACT_EMAIL } from "@/lib/contact-email";
 import { GRAIN_COARSE_BG, GRAIN_FINE_BG } from "@/lib/grain-texture";
 import { SPRING_LIFT, SPRING_LIFT_TRANSITION } from "@/lib/spring-interaction";
 
@@ -60,7 +61,7 @@ export function CartPanel() {
     const body = [...lines, "", `${cart.subtotal}: ${formatUsd(total, locale)}`].join(
       "\n",
     );
-    window.location.href = `mailto:?subject=${encodeURIComponent("Session Rack order")}&body=${encodeURIComponent(body)}`;
+    window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Session Rack order")}&body=${encodeURIComponent(body)}`;
   }
 
   return (

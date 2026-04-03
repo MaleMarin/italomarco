@@ -83,17 +83,17 @@ export function Navbar() {
         <ul className="hidden items-center gap-8 md:flex">
           <li>
             <SpringLink href="/proyectos" className={linkClass}>
-              Escuchar
+              {t.nav.listen}
             </SpringLink>
           </li>
           <li>
             <SpringLink href="/store" className={linkClass}>
-              El proceso
+              {t.nav.process}
             </SpringLink>
           </li>
           <li>
             <SpringLink href="/contact" className={linkClass}>
-              Escribir
+              {t.nav.write}
             </SpringLink>
           </li>
         </ul>
@@ -141,7 +141,7 @@ export function Navbar() {
             onClick={() => setOpen((o) => !o)}
             aria-expanded={open}
             aria-controls="mobile-nav"
-            aria-label={open ? "Close menu" : "Open menu"}
+            aria-label={open ? t.nav.closeMenu : t.nav.openMenu}
             whileHover={reduce ? undefined : SPRING_LIFT}
             transition={SPRING_LIFT_TRANSITION}
           >
@@ -162,7 +162,7 @@ export function Navbar() {
                 className={linkClass}
                 onClick={() => setOpen(false)}
               >
-                Escuchar
+                {t.nav.listen}
               </SpringLink>
             </li>
             <li>
@@ -171,7 +171,7 @@ export function Navbar() {
                 className={linkClass}
                 onClick={() => setOpen(false)}
               >
-                El proceso
+                {t.nav.process}
               </SpringLink>
             </li>
             <li>
@@ -180,7 +180,7 @@ export function Navbar() {
                 className={linkClass}
                 onClick={() => setOpen(false)}
               >
-                Escribir
+                {t.nav.write}
               </SpringLink>
             </li>
             <li>

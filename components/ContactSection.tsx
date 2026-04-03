@@ -2,7 +2,9 @@
 
 import { useState, type FormEvent } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { useLocale } from "@/components/Providers";
 import { useTranslations } from "@/lib/useTranslations";
+import { CONTACT_EMAIL } from "@/lib/contact-email";
 import { SPRING_LIFT, SPRING_LIFT_TRANSITION } from "@/lib/spring-interaction";
 
 const contactType = {
@@ -17,13 +19,17 @@ const labelClass =
   "text-[11px] uppercase tracking-[0.2em] text-mercury/65";
 
 export function ContactSection() {
+  const { locale } = useLocale();
   const t = useTranslations();
   const c = t.contact;
   const reduce = useReducedMotion();
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState(false);
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setSendError(false);
     const form = e.currentTarget;
     const data = new FormData(form);
     const name = String(data.get("name") ?? "").trim();
@@ -31,26 +37,31 @@ export function ContactSection() {
     const intent = String(data.get("intent") ?? "").trim();
     const reference = String(data.get("reference") ?? "").trim();
 
-    const subject = encodeURIComponent(
-      `${c.mailSubjectTag} ${name || "—"}`.trim(),
-    );
-    const body = encodeURIComponent(
-      [
-        `${c.fields.name.label}: ${name}`,
-        `${c.fields.email.label}: ${email}`,
-        "",
-        `${c.fields.intent.label}:`,
-        intent,
-        "",
-        reference ? `${c.fields.reference.label}:\n${reference}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n"),
-    );
-
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
-    setSent(true);
-    form.reset();
+    setSending(true);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          intent,
+          reference,
+          locale,
+        }),
+      });
+      const json = (await res.json()) as { ok?: boolean };
+      if (!res.ok || !json.ok) {
+        setSendError(true);
+        return;
+      }
+      setSent(true);
+      form.reset();
+    } catch {
+      setSendError(true);
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -131,7 +142,10 @@ export function ContactSection() {
                   </p>
                   <motion.button
                     type="button"
-                    onClick={() => setSent(false)}
+                    onClick={() => {
+                      setSent(false);
+                      setSendError(false);
+                    }}
                     className="mt-8 text-xs uppercase tracking-[0.2em] text-electric hover:text-mist transition-colors"
                     style={contactType}
                     whileHover={reduce ? undefined : SPRING_LIFT}
@@ -211,14 +225,30 @@ export function ContactSection() {
                   <div className="flex flex-col gap-4 pt-2 sm:flex-row sm:items-center sm:justify-between">
                     <motion.button
                       type="submit"
-                      className="inline-flex items-center justify-center border border-electric/80 bg-electric/10 px-8 py-3 text-xs uppercase tracking-[0.2em] text-mist transition-colors hover:bg-electric/20 hover:border-electric"
+                      disabled={sending}
+                      className="inline-flex items-center justify-center border border-electric/80 bg-electric/10 px-8 py-3 text-xs uppercase tracking-[0.2em] text-mist transition-colors hover:bg-electric/20 hover:border-electric disabled:pointer-events-none disabled:opacity-45"
                       style={contactType}
-                      whileHover={reduce ? undefined : SPRING_LIFT}
+                      whileHover={reduce || sending ? undefined : SPRING_LIFT}
                       transition={SPRING_LIFT_TRANSITION}
                     >
-                      {c.submit}
+                      {sending ? c.submitting : c.submit}
                     </motion.button>
                   </div>
+                  {sendError ? (
+                    <p
+                      className="text-sm leading-relaxed text-mercury/80"
+                      style={contactType}
+                      role="alert"
+                    >
+                      {c.sendFailed}{" "}
+                      <a
+                        href={`mailto:${CONTACT_EMAIL}`}
+                        className="text-electric underline-offset-2 hover:underline"
+                      >
+                        {CONTACT_EMAIL}
+                      </a>
+                    </p>
+                  ) : null}
                 </motion.form>
               )}
             </AnimatePresence>

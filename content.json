@@ -4,7 +4,12 @@
       "projects": "Projects",
       "services": "Services",
       "lab": "Resource Lab",
-      "contact": "Contact"
+      "contact": "Contact",
+      "listen": "Listen",
+      "process": "The process",
+      "write": "Write",
+      "openMenu": "Open menu",
+      "closeMenu": "Close menu"
     },
     "projectsPage": {
       "eyebrow": "Sonic dossier",
@@ -83,6 +88,8 @@
         }
       },
       "submit": "Send signal",
+      "submitting": "Sending…",
+      "sendFailed": "Could not send. Try again or write to me directly.",
       "success": {
         "title": "Signal received",
         "body": "I'll read what you sent and reply by email.",
@@ -176,7 +183,12 @@
       "projects": "Proyectos",
       "services": "Servicios",
       "lab": "Lab de recursos",
-      "contact": "Contacto"
+      "contact": "Contacto",
+      "listen": "Escuchar",
+      "process": "El proceso",
+      "write": "Escribir",
+      "openMenu": "Abrir menú",
+      "closeMenu": "Cerrar menú"
     },
     "projectsPage": {
       "eyebrow": "Dossier sónico",
@@ -255,6 +267,8 @@
         }
       },
       "submit": "Enviar señal",
+      "submitting": "Enviando…",
+      "sendFailed": "No se pudo enviar. Reintenta o escríbeme directo.",
       "success": {
         "title": "Señal recibida",
         "body": "Leo lo que enviaste y te respondo por correo.",

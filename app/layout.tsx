@@ -51,8 +51,21 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ítalo Marco — Sonic Architecture",
-  description: "Translate intentions into sound.",
+  title: "Ítalo Marco — Arquitectura sónica",
+  description: "Traduzco intenciones en sonido.",
+  openGraph: {
+    title: "Ítalo Marco — Arquitectura sónica",
+    description: "Traduzco intenciones en sonido.",
+    url: "https://www.italomarco.com",
+    siteName: "Ítalo Marco",
+    locale: "es_ES",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Ítalo Marco — Arquitectura sónica",
+    description: "Traduzco intenciones en sonido.",
+  },
 };
 
 /** Si falla la carga de chunks CSS de Tailwind en dev, el HTML sigue siendo usable. */

@@ -1,6 +1,7 @@
 "use client";
 import { useId, useRef, useState } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
+import { CONTACT_EMAIL } from "@/lib/contact-email";
 
 const STEPS = [
   {
@@ -336,7 +337,7 @@ export default function Process() {
           style={{ marginTop: "48px" }}
         >
           <motion.a
-            href="mailto:hola@italomarco.com"
+            href={`mailto:${CONTACT_EMAIL}`}
             whileHover={{ color: "rgba(255,255,255,0.9)" }}
             style={{
               fontFamily: '"DM Sans", sans-serif',
